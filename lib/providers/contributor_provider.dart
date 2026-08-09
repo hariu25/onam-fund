@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/contributor.dart';
 import '../models/payment.dart';
@@ -8,6 +9,9 @@ class ContributorProvider extends ChangeNotifier {
   List<Payment> _payments = [];
   bool _isLoading = true;
 
+  StreamSubscription<List<Contributor>>? _contributorsSubscription;
+  StreamSubscription<List<Payment>>? _paymentsSubscription;
+
   // Search, Filter, Sort States
   String _searchQuery = '';
   String _statusFilter = 'All'; // 'All', 'Paid', 'Unpaid', 'Partial'
@@ -15,7 +19,7 @@ class ContributorProvider extends ChangeNotifier {
   bool _sortAscending = true;
 
   ContributorProvider() {
-    loadData();
+    initDataStream();
   }
 
   // Getters
@@ -27,16 +31,54 @@ class ContributorProvider extends ChangeNotifier {
   String get sortBy => _sortBy;
   bool get sortAscending => _sortAscending;
 
-  // Load data from StorageService
-  Future<void> loadData() async {
+  /// Initialize Firestore real-time snapshot listeners
+  void initDataStream() {
     _isLoading = true;
     notifyListeners();
 
-    _contributors = await StorageService.getContributors();
-    _payments = await StorageService.getPayments();
+    _contributorsSubscription?.cancel();
+    _paymentsSubscription?.cancel();
 
-    _isLoading = false;
+    StorageService.checkAndSeedInitialData().then((_) {
+      _contributorsSubscription = StorageService.getContributorsStream().listen(
+        (contributorsList) {
+          _contributors = contributorsList;
+          _isLoading = false;
+          notifyListeners();
+        },
+        onError: (error) {
+          _isLoading = false;
+          notifyListeners();
+        },
+      );
+
+      _paymentsSubscription = StorageService.getPaymentsStream().listen(
+        (paymentsList) {
+          _payments = paymentsList;
+          _isLoading = false;
+          notifyListeners();
+        },
+        onError: (error) {
+          _isLoading = false;
+          notifyListeners();
+        },
+      );
+    });
+  }
+
+  /// Clear data on logout so unauthenticated users don't access cached data
+  void clearDataOnLogout() {
+    _contributorsSubscription?.cancel();
+    _paymentsSubscription?.cancel();
+    _contributors = [];
+    _payments = [];
+    _isLoading = true;
     notifyListeners();
+  }
+
+  // Load data method for backwards compatibility
+  Future<void> loadData() async {
+    initDataStream();
   }
 
   // Summary Metrics Getters
@@ -123,7 +165,7 @@ class ContributorProvider extends ChangeNotifier {
     String? initialPaymentMethod,
     String? initialPaymentNotes,
   }) async {
-    _contributors.add(contributor);
+    await StorageService.saveContributor(contributor);
 
     if (initialPaymentAmount != null && initialPaymentAmount > 0) {
       final payment = Payment(
@@ -134,45 +176,28 @@ class ContributorProvider extends ChangeNotifier {
         paymentMethod: initialPaymentMethod ?? 'Cash',
         notes: initialPaymentNotes ?? 'Initial payment on registration',
       );
-      _payments.add(payment);
-      await StorageService.savePayments(_payments);
+      await StorageService.savePayment(payment);
     }
-
-    await StorageService.saveContributors(_contributors);
-    notifyListeners();
   }
 
   // Edit Contributor details & amount due
   Future<void> editContributor(Contributor updatedContributor) async {
-    final index = _contributors.indexWhere((c) => c.id == updatedContributor.id);
-    if (index != -1) {
-      _contributors[index] = updatedContributor;
-      await StorageService.saveContributors(_contributors);
-      notifyListeners();
-    }
+    await StorageService.saveContributor(updatedContributor);
   }
 
   // Delete Contributor and associated payments
   Future<void> deleteContributor(String contributorId) async {
-    _contributors.removeWhere((c) => c.id == contributorId);
-    _payments.removeWhere((p) => p.contributorId == contributorId);
-    await StorageService.saveContributors(_contributors);
-    await StorageService.savePayments(_payments);
-    notifyListeners();
+    await StorageService.deleteContributor(contributorId);
   }
 
   // Record Payment
   Future<void> addPayment(Payment payment) async {
-    _payments.add(payment);
-    await StorageService.savePayments(_payments);
-    notifyListeners();
+    await StorageService.savePayment(payment);
   }
 
   // Delete Payment
   Future<void> deletePayment(String paymentId) async {
-    _payments.removeWhere((p) => p.id == paymentId);
-    await StorageService.savePayments(_payments);
-    notifyListeners();
+    await StorageService.deletePayment(paymentId);
   }
 
   // Search & Filter Setters
@@ -196,21 +221,17 @@ class ContributorProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Reset to Sample Data
+  // Reset to Sample Data in Firestore
   Future<void> resetToSampleData() async {
     _isLoading = true;
     notifyListeners();
 
     await StorageService.resetToSampleData();
-    await loadData();
   }
 
-  // Clear All Data
+  // Clear All Data in Firestore
   Future<void> clearAllData() async {
-    _contributors.clear();
-    _payments.clear();
     await StorageService.clearAllData();
-    notifyListeners();
   }
 
   // Generate Unique Member ID
@@ -226,5 +247,12 @@ class ContributorProvider extends ChangeNotifier {
       }
     }
     return 'ONAM-${maxIdNum + 1}';
+  }
+
+  @override
+  void dispose() {
+    _contributorsSubscription?.cancel();
+    _paymentsSubscription?.cancel();
+    super.dispose();
   }
 }

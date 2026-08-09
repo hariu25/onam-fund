@@ -40,6 +40,9 @@ dependencies:
   csv: ^8.0.0
   pdf: ^3.12.0
   printing: ^5.14.3
+  firebase_core: ^4.13.0
+  firebase_auth: ^6.5.7
+  cloud_firestore: ^6.8.0
 
 dev_dependencies:
   flutter_test:

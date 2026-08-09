@@ -1,78 +1,111 @@
-import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/contributor.dart';
 import '../models/payment.dart';
 import 'sample_data.dart';
 
 class StorageService {
-  static const String _keyContributors = 'onam_contributors_v1';
-  static const String _keyPayments = 'onam_payments_v1';
-  static const String _keyInitialLoaded = 'onam_initial_loaded_v1';
+  static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  static final CollectionReference<Map<String, dynamic>> _contributorsRef =
+      _firestore.collection('contributors');
+  static final CollectionReference<Map<String, dynamic>> _paymentsRef =
+      _firestore.collection('payments');
 
-  static Future<List<Contributor>> getContributors() async {
-    final prefs = await SharedPreferences.getInstance();
-    final bool isLoaded = prefs.getBool(_keyInitialLoaded) ?? false;
+  /// Stream of contributors from Cloud Firestore in real-time
+  static Stream<List<Contributor>> getContributorsStream() {
+    return _contributorsRef.snapshots().map((snapshot) {
+      return snapshot.docs.map((doc) {
+        final data = doc.data();
+        if (!data.containsKey('id') || data['id'] == null || (data['id'] as String).isEmpty) {
+          data['id'] = doc.id;
+        }
+        return Contributor.fromMap(data);
+      }).toList();
+    });
+  }
 
-    if (!isLoaded) {
-      // First run: pre-populate sample data
-      final samples = SampleData.getInitialContributors();
-      await saveContributors(samples);
-      final samplePayments = SampleData.getInitialPayments();
-      await savePayments(samplePayments);
-      await prefs.setBool(_keyInitialLoaded, true);
-      return samples;
-    }
+  /// Stream of payments from Cloud Firestore in real-time
+  static Stream<List<Payment>> getPaymentsStream() {
+    return _paymentsRef.snapshots().map((snapshot) {
+      return snapshot.docs.map((doc) {
+        final data = doc.data();
+        if (!data.containsKey('id') || data['id'] == null || (data['id'] as String).isEmpty) {
+          data['id'] = doc.id;
+        }
+        return Payment.fromMap(data);
+      }).toList();
+    });
+  }
 
-    final String? jsonStr = prefs.getString(_keyContributors);
-    if (jsonStr == null || jsonStr.isEmpty) return [];
-
+  /// Check if contributors collection is empty and seed initial sample data once
+  static Future<void> checkAndSeedInitialData() async {
     try {
-      final List<dynamic> jsonList = jsonDecode(jsonStr);
-      return jsonList.map((item) => Contributor.fromMap(item)).toList();
+      final snapshot = await _contributorsRef.limit(1).get();
+      if (snapshot.docs.isEmpty) {
+        await seedSampleData();
+      }
     } catch (e) {
-      return [];
+      // Ignore if unauthenticated or error
     }
   }
 
-  static Future<void> saveContributors(List<Contributor> list) async {
-    final prefs = await SharedPreferences.getInstance();
-    final List<Map<String, dynamic>> jsonList =
-        list.map((c) => c.toMap()).toList();
-    await prefs.setString(_keyContributors, jsonEncode(jsonList));
-  }
-
-  static Future<List<Payment>> getPayments() async {
-    final prefs = await SharedPreferences.getInstance();
-    final String? jsonStr = prefs.getString(_keyPayments);
-    if (jsonStr == null || jsonStr.isEmpty) return [];
-
-    try {
-      final List<dynamic> jsonList = jsonDecode(jsonStr);
-      return jsonList.map((item) => Payment.fromMap(item)).toList();
-    } catch (e) {
-      return [];
+  /// Seed initial sample data into Firestore as individual documents
+  static Future<void> seedSampleData() async {
+    final sampleContributors = SampleData.getInitialContributors();
+    for (final c in sampleContributors) {
+      await saveContributor(c);
     }
-  }
 
-  static Future<void> savePayments(List<Payment> list) async {
-    final prefs = await SharedPreferences.getInstance();
-    final List<Map<String, dynamic>> jsonList =
-        list.map((p) => p.toMap()).toList();
-    await prefs.setString(_keyPayments, jsonEncode(jsonList));
-  }
-
-  static Future<void> resetToSampleData() async {
-    final samples = SampleData.getInitialContributors();
     final samplePayments = SampleData.getInitialPayments();
-    await saveContributors(samples);
-    await savePayments(samplePayments);
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_keyInitialLoaded, true);
+    for (final p in samplePayments) {
+      await savePayment(p);
+    }
   }
 
+  /// Save or update a Contributor as an individual Firestore document using its existing ID
+  static Future<void> saveContributor(Contributor contributor) async {
+    await _contributorsRef.doc(contributor.id).set(contributor.toMap());
+  }
+
+  /// Delete a Contributor document and associated payment documents
+  static Future<void> deleteContributor(String contributorId) async {
+    await _contributorsRef.doc(contributorId).delete();
+    await deletePaymentsForContributor(contributorId);
+  }
+
+  /// Save or update a Payment as an individual Firestore document using its existing ID
+  static Future<void> savePayment(Payment payment) async {
+    await _paymentsRef.doc(payment.id).set(payment.toMap());
+  }
+
+  /// Delete a Payment document by ID
+  static Future<void> deletePayment(String paymentId) async {
+    await _paymentsRef.doc(paymentId).delete();
+  }
+
+  /// Delete all payments for a specific contributor
+  static Future<void> deletePaymentsForContributor(String contributorId) async {
+    final snapshot = await _paymentsRef.where('contributorId', isEqualTo: contributorId).get();
+    for (final doc in snapshot.docs) {
+      await doc.reference.delete();
+    }
+  }
+
+  /// Reset to sample data: delete existing documents and seed sample data
+  static Future<void> resetToSampleData() async {
+    await clearAllData();
+    await seedSampleData();
+  }
+
+  /// Clear all data in contributors and payments collections
   static Future<void> clearAllData() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_keyContributors);
-    await prefs.remove(_keyPayments);
+    final contributorsSnap = await _contributorsRef.get();
+    for (final doc in contributorsSnap.docs) {
+      await doc.reference.delete();
+    }
+
+    final paymentsSnap = await _paymentsRef.get();
+    for (final doc in paymentsSnap.docs) {
+      await doc.reference.delete();
+    }
   }
 }

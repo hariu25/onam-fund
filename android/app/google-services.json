@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1092334211125",
+    "project_id": "onamfund",
+    "storage_bucket": "onamfund.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1092334211125:android:f2c017122f8878df35617c",
+        "android_client_info": {
+          "package_name": "com.onam.fund.onam"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBrwxa2Uhtjb8YDpe6iauCzlPnoZJY6huM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -13,38 +13,73 @@ class LoginView extends StatefulWidget {
 
 class _LoginViewState extends State<LoginView> {
   final _formKey = GlobalKey<FormState>();
-  final _usernameController = TextEditingController(text: 'admin@onam.org');
+  final _emailController = TextEditingController(text: 'admin@onam.org');
   final _passwordController = TextEditingController(text: 'admin123');
+  final _confirmPasswordController = TextEditingController(text: 'admin123');
+  bool _isSignUpMode = false;
   bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
 
   @override
   void dispose() {
-    _usernameController.dispose();
+    _emailController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
-  void _handleLogin() {
-    if (_formKey.currentState!.validate()) {
-      final auth = Provider.of<AuthProvider>(context, listen: false);
-      final success = auth.login(
-        _usernameController.text.trim(),
-        _passwordController.text,
-      );
+  Future<void> _handleSubmit() async {
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    auth.clearError();
 
-      if (!success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Invalid username or password.'),
-            backgroundColor: Colors.red,
-          ),
-        );
+    if (!_formKey.currentState!.validate()) return;
+
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+
+    FocusScope.of(context).unfocus();
+
+    bool success = false;
+    if (_isSignUpMode) {
+      success = await auth.signUp(email, password);
+    } else {
+      success = await auth.login(email, password);
+      // If demo login fails because account not found, attempt auto sign-up for seamless onboarding
+      if (!success &&
+          auth.errorMessage?.contains('No account found') == true &&
+          email == 'admin@onam.org') {
+        success = await auth.signUp(email, password);
       }
     }
+
+    if (!mounted) return;
+
+    if (!success && auth.errorMessage != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(auth.errorMessage!),
+          backgroundColor: Colors.red.shade700,
+          duration: const Duration(seconds: 5),
+        ),
+      );
+    }
+  }
+
+  void _toggleAuthMode() {
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    auth.clearError();
+    setState(() {
+      _isSignUpMode = !_isSignUpMode;
+      if (_isSignUpMode && _confirmPasswordController.text.isEmpty) {
+        _confirmPasswordController.text = _passwordController.text;
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
+    final auth = Provider.of<AuthProvider>(context);
+
     return Scaffold(
       body: Container(
         width: double.infinity,
@@ -111,14 +146,112 @@ class _LoginViewState extends State<LoginView> {
                               color: AppColors.primaryGold,
                             ),
                           ),
-                          const SizedBox(height: 24),
+                          const SizedBox(height: 20),
+
+                          // Auth Mode Selector Tabs
+                          Container(
+                            decoration: BoxDecoration(
+                              color: AppColors.warmGoldBg,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      if (_isSignUpMode) _toggleAuthMode();
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(vertical: 10),
+                                      decoration: BoxDecoration(
+                                        color: !_isSignUpMode
+                                            ? AppColors.primaryDarkGreen
+                                            : Colors.transparent,
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Text(
+                                        'LOG IN',
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 13,
+                                          color: !_isSignUpMode
+                                              ? AppColors.primaryGold
+                                              : AppColors.textSecondary,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                Expanded(
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      if (!_isSignUpMode) _toggleAuthMode();
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(vertical: 10),
+                                      decoration: BoxDecoration(
+                                        color: _isSignUpMode
+                                            ? AppColors.primaryDarkGreen
+                                            : Colors.transparent,
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Text(
+                                        'SIGN UP',
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 13,
+                                          color: _isSignUpMode
+                                              ? AppColors.primaryGold
+                                              : AppColors.textSecondary,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+
+                          // Error Banner if Auth Error exists
+                          if (auth.errorMessage != null) ...[
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.red.shade50,
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: Colors.red.shade300),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.error_outline, color: Colors.red.shade700, size: 20),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      auth.errorMessage!,
+                                      style: TextStyle(
+                                        color: Colors.red.shade900,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                          ],
 
                           // Username / Email Field
                           CustomTextField(
-                            controller: _usernameController,
+                            controller: _emailController,
                             label: 'Username / Email',
-                            hint: 'Enter your username or email',
-                            prefixIcon: Icons.person_outline,
+                            hint: 'e.g. admin@onam.org or admin',
+                            prefixIcon: Icons.email_outlined,
+                            keyboardType: TextInputType.emailAddress,
                             validator: (val) {
                               if (val == null || val.trim().isEmpty) {
                                 return 'Please enter username or email';
@@ -132,7 +265,7 @@ class _LoginViewState extends State<LoginView> {
                           CustomTextField(
                             controller: _passwordController,
                             label: 'Password',
-                            hint: 'Enter password',
+                            hint: 'Enter password (min 6 characters)',
                             prefixIcon: Icons.lock_outline,
                             isObscure: _obscurePassword,
                             suffixIcon: IconButton(
@@ -150,17 +283,50 @@ class _LoginViewState extends State<LoginView> {
                               if (val == null || val.isEmpty) {
                                 return 'Please enter password';
                               }
+                              if (val.length < 6) {
+                                return 'Password must be at least 6 characters';
+                              }
                               return null;
                             },
                           ),
+                          if (_isSignUpMode) ...[
+                            const SizedBox(height: 16),
+                            CustomTextField(
+                              controller: _confirmPasswordController,
+                              label: 'Confirm Password',
+                              hint: 'Re-enter password',
+                              prefixIcon: Icons.lock_outline,
+                              isObscure: _obscureConfirmPassword,
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
+                                  color: AppColors.textSecondary,
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    _obscureConfirmPassword = !_obscureConfirmPassword;
+                                  });
+                                },
+                              ),
+                              validator: (val) {
+                                if (val == null || val.isEmpty) {
+                                  return 'Please confirm password';
+                                }
+                                if (val != _passwordController.text) {
+                                  return 'Passwords do not match';
+                                }
+                                return null;
+                              },
+                            ),
+                          ],
                           const SizedBox(height: 24),
 
-                          // Login Button
+                          // Submit Button
                           SizedBox(
                             width: double.infinity,
                             height: 50,
                             child: ElevatedButton(
-                              onPressed: _handleLogin,
+                              onPressed: auth.isLoading ? null : _handleSubmit,
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppColors.primaryDarkGreen,
                                 foregroundColor: AppColors.primaryGold,
@@ -168,30 +334,62 @@ class _LoginViewState extends State<LoginView> {
                                   borderRadius: BorderRadius.circular(14),
                                 ),
                               ),
-                              child: const Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(Icons.login_rounded, size: 20),
-                                  SizedBox(width: 8),
-                                  Text(
-                                    'ORGANIZER LOGIN',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      letterSpacing: 1.0,
+                              child: auth.isLoading
+                                  ? const SizedBox(
+                                      width: 24,
+                                      height: 24,
+                                      child: CircularProgressIndicator(
+                                        color: AppColors.primaryGold,
+                                        strokeWidth: 2.5,
+                                      ),
+                                    )
+                                  : Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          _isSignUpMode ? Icons.person_add_rounded : Icons.login_rounded,
+                                          size: 20,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          _isSignUpMode ? 'CREATE ACCOUNT' : 'ORGANIZER LOGIN',
+                                          style: const TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                            letterSpacing: 1.0,
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                  ),
-                                ],
-                              ),
                             ),
                           ),
                           const SizedBox(height: 16),
 
+                          // Toggle Auth Mode text button
+                          TextButton(
+                            onPressed: _toggleAuthMode,
+                            child: Text(
+                              _isSignUpMode
+                                  ? 'Already have an account? Log In'
+                                  : "Don't have an account? Sign Up",
+                              style: const TextStyle(
+                                color: AppColors.primaryDarkGreen,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+
                           // Demo Credential Helper Chip
                           GestureDetector(
                             onTap: () {
-                              _usernameController.text = 'admin@onam.org';
-                              _passwordController.text = 'admin123';
+                              auth.clearError();
+                              setState(() {
+                                _isSignUpMode = false;
+                                _emailController.text = 'admin@onam.org';
+                                _passwordController.text = 'admin123';
+                                _confirmPasswordController.text = 'admin123';
+                              });
                             },
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
