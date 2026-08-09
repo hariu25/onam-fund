@@ -26,7 +26,49 @@ class DashboardView extends StatelessWidget {
         builder: (context, provider, auth, child) {
           if (provider.isLoading) {
             return const Center(
-              child: CircularProgressIndicator(color: AppColors.primaryDarkGreen),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(color: AppColors.primaryDarkGreen),
+                  SizedBox(height: 16),
+                  Text('Loading dashboard summary...', style: TextStyle(color: AppColors.textSecondary)),
+                ],
+              ),
+            );
+          }
+
+          if (provider.errorMessage != null) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.cloud_off_rounded, size: 56, color: Colors.redAccent),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'Failed to Load Dashboard Data',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      provider.errorMessage!,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                    ),
+                    const SizedBox(height: 20),
+                    ElevatedButton.icon(
+                      onPressed: provider.retryFetch,
+                      icon: const Icon(Icons.refresh),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryDarkGreen,
+                        foregroundColor: AppColors.primaryGold,
+                      ),
+                      label: const Text('Retry Loading Data'),
+                    ),
+                  ],
+                ),
+              ),
             );
           }
 
@@ -34,10 +76,14 @@ class DashboardView extends StatelessWidget {
               ? (provider.totalCollected / provider.totalExpected).clamp(0.0, 1.0)
               : 0.0;
 
-          final recentPayments = provider.payments.toList()
-            ..sort((a, b) => b.paymentDate.compareTo(a.paymentDate));
+          final recentPayments = provider.payments.take(5).toList();
 
-          return SingleChildScrollView(
+          return RefreshIndicator(
+            color: AppColors.primaryDarkGreen,
+            onRefresh: () async {
+              provider.retryFetch();
+            },
+            child: SingleChildScrollView(
             padding: const EdgeInsets.all(20.0),
             child: Center(
               child: ConstrainedBox(
@@ -352,11 +398,12 @@ class DashboardView extends StatelessWidget {
                 ),
               ),
             ),
-          );
-        },
-      ),
-    );
-  }
+          ),
+        );
+      },
+    ),
+  );
+}
 
   Widget _statusBreakdownCard({
     required String label,

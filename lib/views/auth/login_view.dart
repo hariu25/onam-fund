@@ -403,12 +403,15 @@ class _LoginViewState extends State<LoginView> {
                                 children: [
                                   Icon(Icons.lightbulb_outline, size: 14, color: AppColors.darkGold),
                                   SizedBox(width: 6),
-                                  Text(
-                                    'Demo Login: admin@onam.org / admin123',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w600,
-                                      color: AppColors.primaryDarkGreen,
+                                  Flexible(
+                                    child: Text(
+                                      'Demo Login: admin@onam.org / admin123',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppColors.primaryDarkGreen,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
                                 ],

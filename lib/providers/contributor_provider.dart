@@ -8,6 +8,33 @@ class ContributorProvider extends ChangeNotifier {
   List<Contributor> _contributors = [];
   List<Payment> _payments = [];
   bool _isLoading = true;
+  String? _errorMessage;
+
+  // Performance benchmark logs
+  final Map<String, int> _lastPerformanceMetricsMs = {};
+
+  // Indexed payment lookups for O(1) time complexity
+  final Map<String, List<Payment>> _paymentsByContributor = {};
+  final Map<String, double> _paidAmountByContributor = {};
+
+  // Cached summary metrics
+  double _totalExpectedCache = 0.0;
+  double _totalCollectedCache = 0.0;
+  int _paidCountCache = 0;
+  int _unpaidCountCache = 0;
+  int _partialCountCache = 0;
+  bool _metricsDirty = true;
+
+  // Cached filtered list
+  List<Contributor>? _filteredContributorsCache;
+  bool _filteredListDirty = true;
+
+  // Debounce timer for search queries
+  Timer? _searchDebounceTimer;
+
+  // Pagination & Lazy Loading state
+  static const int _pageSize = 20;
+  int _displayedItemCount = _pageSize;
 
   StreamSubscription<List<Contributor>>? _contributorsSubscription;
   StreamSubscription<List<Payment>>? _paymentsSubscription;
@@ -26,70 +53,178 @@ class ContributorProvider extends ChangeNotifier {
   List<Contributor> get contributors => _contributors;
   List<Payment> get payments => _payments;
   bool get isLoading => _isLoading;
+  String? get errorMessage => _errorMessage;
   String get searchQuery => _searchQuery;
   String get statusFilter => _statusFilter;
   String get sortBy => _sortBy;
   bool get sortAscending => _sortAscending;
+  int get displayedItemCount => _displayedItemCount;
+  int get pageSize => _pageSize;
+  Map<String, int> get performanceMetricsMs => _lastPerformanceMetricsMs;
 
-  /// Initialize Firestore real-time snapshot listeners
+  /// Fast O(1) lookups using pre-indexed payment mappings
+  double getAmountPaidForContributor(String contributorId) {
+    return _paidAmountByContributor[contributorId] ?? 0.0;
+  }
+
+  /// Initialize Firestore real-time snapshot listeners with timing profiling
   void initDataStream() {
+    if (_contributorsSubscription != null && _paymentsSubscription != null && !_isLoading && _errorMessage == null) {
+      // Stream is already active and healthy
+      return;
+    }
+
     _isLoading = true;
+    _errorMessage = null;
     notifyListeners();
 
     _contributorsSubscription?.cancel();
     _paymentsSubscription?.cancel();
 
+    final stopwatch = Stopwatch()..start();
+
     StorageService.checkAndSeedInitialData().then((_) {
       _contributorsSubscription = StorageService.getContributorsStream().listen(
         (contributorsList) {
+          final parseTime = stopwatch.elapsedMilliseconds;
           _contributors = contributorsList;
+          _invalidateCaches();
           _isLoading = false;
+          _lastPerformanceMetricsMs['contributorsStreamMs'] = parseTime;
           notifyListeners();
         },
         onError: (error) {
           _isLoading = false;
+          _errorMessage = 'Failed to load member data: $error';
           notifyListeners();
         },
       );
 
       _paymentsSubscription = StorageService.getPaymentsStream().listen(
         (paymentsList) {
+          final parseTime = stopwatch.elapsedMilliseconds;
           _payments = paymentsList;
+          _reindexPayments();
+          _invalidateCaches();
           _isLoading = false;
+          _lastPerformanceMetricsMs['paymentsStreamMs'] = parseTime;
           notifyListeners();
         },
         onError: (error) {
           _isLoading = false;
+          _errorMessage = 'Failed to load payment records: $error';
           notifyListeners();
         },
       );
+    }).catchError((error) {
+      _isLoading = false;
+      _errorMessage = 'Database initialization error: $error';
+      notifyListeners();
     });
+  }
+
+  /// Re-index payments into O(1) lookup maps
+  void _reindexPayments() {
+    final sw = Stopwatch()..start();
+    _paymentsByContributor.clear();
+    _paidAmountByContributor.clear();
+
+    for (final payment in _payments) {
+      _paymentsByContributor.putIfAbsent(payment.contributorId, () => []).add(payment);
+      _paidAmountByContributor[payment.contributorId] =
+          (_paidAmountByContributor[payment.contributorId] ?? 0.0) + payment.amount;
+    }
+
+    // Sort payment lists by date descending once during indexing
+    for (final list in _paymentsByContributor.values) {
+      list.sort((a, b) => b.paymentDate.compareTo(a.paymentDate));
+    }
+    sw.stop();
+    _lastPerformanceMetricsMs['indexingMs'] = sw.elapsedMilliseconds;
+  }
+
+  /// Invalidate memoized caches when underlying state changes
+  void _invalidateCaches() {
+    _metricsDirty = true;
+    _filteredListDirty = true;
   }
 
   /// Clear data on logout so unauthenticated users don't access cached data
   void clearDataOnLogout() {
     _contributorsSubscription?.cancel();
     _paymentsSubscription?.cancel();
+    _contributorsSubscription = null;
+    _paymentsSubscription = null;
     _contributors = [];
     _payments = [];
+    _paymentsByContributor.clear();
+    _paidAmountByContributor.clear();
+    _invalidateCaches();
     _isLoading = true;
+    _errorMessage = null;
     notifyListeners();
   }
 
   // Load data method for backwards compatibility
   Future<void> loadData() async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
     initDataStream();
   }
 
-  // Summary Metrics Getters
+  /// Retry data fetch on error
+  void retryFetch() {
+    _contributorsSubscription?.cancel();
+    _paymentsSubscription?.cancel();
+    _contributorsSubscription = null;
+    _paymentsSubscription = null;
+    initDataStream();
+  }
+
+  // Summary Metrics Getters (Memoized)
   int get totalMembers => _contributors.length;
 
+  void _recomputeMetricsIfNeeded() {
+    if (!_metricsDirty) return;
+    final sw = Stopwatch()..start();
+
+    _totalExpectedCache = _contributors.fold(0.0, (sum, c) => sum + c.amountDue);
+    _totalCollectedCache = _payments.fold(0.0, (sum, p) => sum + p.amount);
+
+    int paid = 0;
+    int unpaid = 0;
+    int partial = 0;
+
+    for (final c in _contributors) {
+      final amountPaid = _paidAmountByContributor[c.id] ?? 0.0;
+      final status = c.getStatusFromPaid(amountPaid);
+      if (status == PaymentStatus.paid) {
+        paid++;
+      } else if (status == PaymentStatus.unpaid) {
+        unpaid++;
+      } else {
+        partial++;
+      }
+    }
+
+    _paidCountCache = paid;
+    _unpaidCountCache = unpaid;
+    _partialCountCache = partial;
+    _metricsDirty = false;
+
+    sw.stop();
+    _lastPerformanceMetricsMs['metricsComputeMs'] = sw.elapsedMilliseconds;
+  }
+
   double get totalExpected {
-    return _contributors.fold(0.0, (sum, c) => sum + c.amountDue);
+    _recomputeMetricsIfNeeded();
+    return _totalExpectedCache;
   }
 
   double get totalCollected {
-    return _payments.fold(0.0, (sum, p) => sum + p.amount);
+    _recomputeMetricsIfNeeded();
+    return _totalCollectedCache;
   }
 
   double get pendingAmount {
@@ -98,29 +233,36 @@ class ContributorProvider extends ChangeNotifier {
   }
 
   int get paidCount {
-    return _contributors.where((c) => c.getStatus(_payments) == PaymentStatus.paid).length;
+    _recomputeMetricsIfNeeded();
+    return _paidCountCache;
   }
 
   int get unpaidCount {
-    return _contributors.where((c) => c.getStatus(_payments) == PaymentStatus.unpaid).length;
+    _recomputeMetricsIfNeeded();
+    return _unpaidCountCache;
   }
 
   int get partialCount {
-    return _contributors.where((c) => c.getStatus(_payments) == PaymentStatus.partial).length;
+    _recomputeMetricsIfNeeded();
+    return _partialCountCache;
   }
 
-  // Payments for specific contributor
+  // Payments for specific contributor using O(1) indexed lookup map
   List<Payment> getPaymentsForContributor(String contributorId) {
-    final list = _payments.where((p) => p.contributorId == contributorId).toList();
-    list.sort((a, b) => b.paymentDate.compareTo(a.paymentDate));
-    return list;
+    return _paymentsByContributor[contributorId] ?? const [];
   }
 
-  // Filtered and Sorted Contributors List
+  // Filtered and Sorted Contributors List (Memoized with O(1) payment lookups)
   List<Contributor> get filteredContributors {
-    return _contributors.where((c) {
+    if (!_filteredListDirty && _filteredContributorsCache != null) {
+      return _filteredContributorsCache!;
+    }
+
+    final sw = Stopwatch()..start();
+    final q = _searchQuery.trim().toLowerCase();
+
+    final filtered = _contributors.where((c) {
       // 1. Search Query filter (matches Name, Member ID, or Phone)
-      final q = _searchQuery.trim().toLowerCase();
       final matchesSearch = q.isEmpty ||
           c.name.toLowerCase().contains(q) ||
           c.id.toLowerCase().contains(q) ||
@@ -128,34 +270,71 @@ class ContributorProvider extends ChangeNotifier {
 
       if (!matchesSearch) return false;
 
-      // 2. Status Filter
-      final status = c.getStatus(_payments);
+      // 2. Status Filter using fast indexed paid amount
+      final paid = _paidAmountByContributor[c.id] ?? 0.0;
+      final status = c.getStatusFromPaid(paid);
       if (_statusFilter == 'Paid' && status != PaymentStatus.paid) return false;
       if (_statusFilter == 'Unpaid' && status != PaymentStatus.unpaid) return false;
       if (_statusFilter == 'Partial' && status != PaymentStatus.partial) return false;
 
       return true;
-    }).toList()
-      ..sort((a, b) {
-        int comparison = 0;
-        switch (_sortBy) {
-          case 'name':
-            comparison = a.name.toLowerCase().compareTo(b.name.toLowerCase());
-            break;
-          case 'amountDue':
-            comparison = a.amountDue.compareTo(b.amountDue);
-            break;
-          case 'amountPaid':
-            comparison = a.getAmountPaid(_payments).compareTo(b.getAmountPaid(_payments));
-            break;
-          case 'status':
-            comparison = a.getStatus(_payments).index.compareTo(b.getStatus(_payments).index);
-            break;
-          default:
-            comparison = a.name.compareTo(b.name);
-        }
-        return _sortAscending ? comparison : -comparison;
-      });
+    }).toList();
+
+    filtered.sort((a, b) {
+      int comparison = 0;
+      switch (_sortBy) {
+        case 'name':
+          comparison = a.name.toLowerCase().compareTo(b.name.toLowerCase());
+          break;
+        case 'amountDue':
+          comparison = a.amountDue.compareTo(b.amountDue);
+          break;
+        case 'amountPaid':
+          final paidA = _paidAmountByContributor[a.id] ?? 0.0;
+          final paidB = _paidAmountByContributor[b.id] ?? 0.0;
+          comparison = paidA.compareTo(paidB);
+          break;
+        case 'status':
+          final paidA = _paidAmountByContributor[a.id] ?? 0.0;
+          final paidB = _paidAmountByContributor[b.id] ?? 0.0;
+          comparison = a.getStatusFromPaid(paidA).index.compareTo(b.getStatusFromPaid(paidB).index);
+          break;
+        default:
+          comparison = a.name.compareTo(b.name);
+      }
+      return _sortAscending ? comparison : -comparison;
+    });
+
+    _filteredContributorsCache = filtered;
+    _filteredListDirty = false;
+
+    sw.stop();
+    _lastPerformanceMetricsMs['filterSortMs'] = sw.elapsedMilliseconds;
+    return _filteredContributorsCache!;
+  }
+
+  /// Paginated items subset for virtualized lazy loading
+  List<Contributor> get paginatedFilteredContributors {
+    final fullList = filteredContributors;
+    if (_displayedItemCount >= fullList.length) {
+      return fullList;
+    }
+    return fullList.take(_displayedItemCount).toList();
+  }
+
+  bool get hasMoreItems {
+    return _displayedItemCount < filteredContributors.length;
+  }
+
+  void loadMoreItems() {
+    if (hasMoreItems) {
+      _displayedItemCount += _pageSize;
+      notifyListeners();
+    }
+  }
+
+  void resetPagination() {
+    _displayedItemCount = _pageSize;
   }
 
   // Add Contributor (with optional immediate initial payment)
@@ -200,14 +379,33 @@ class ContributorProvider extends ChangeNotifier {
     await StorageService.deletePayment(paymentId);
   }
 
-  // Search & Filter Setters
-  void setSearchQuery(String query) {
-    _searchQuery = query;
-    notifyListeners();
+  // Search & Filter Setters with Debouncing
+  void setSearchQuery(String query, {bool immediate = false}) {
+    if (_searchQuery == query) return;
+
+    if (immediate || query.isEmpty) {
+      _searchDebounceTimer?.cancel();
+      _searchQuery = query;
+      resetPagination();
+      _filteredListDirty = true;
+      notifyListeners();
+      return;
+    }
+
+    _searchDebounceTimer?.cancel();
+    _searchDebounceTimer = Timer(const Duration(milliseconds: 250), () {
+      _searchQuery = query;
+      resetPagination();
+      _filteredListDirty = true;
+      notifyListeners();
+    });
   }
 
   void setStatusFilter(String filter) {
+    if (_statusFilter == filter) return;
     _statusFilter = filter;
+    resetPagination();
+    _filteredListDirty = true;
     notifyListeners();
   }
 
@@ -218,20 +416,34 @@ class ContributorProvider extends ChangeNotifier {
       _sortBy = field;
       _sortAscending = true;
     }
+    resetPagination();
+    _filteredListDirty = true;
     notifyListeners();
   }
 
   // Reset to Sample Data in Firestore
   Future<void> resetToSampleData() async {
     _isLoading = true;
+    _errorMessage = null;
     notifyListeners();
 
-    await StorageService.resetToSampleData();
+    try {
+      await StorageService.resetToSampleData();
+    } catch (e) {
+      _isLoading = false;
+      _errorMessage = 'Failed to reset sample data: $e';
+      notifyListeners();
+    }
   }
 
   // Clear All Data in Firestore
   Future<void> clearAllData() async {
-    await StorageService.clearAllData();
+    try {
+      await StorageService.clearAllData();
+    } catch (e) {
+      _errorMessage = 'Failed to clear data: $e';
+      notifyListeners();
+    }
   }
 
   // Generate Unique Member ID
@@ -251,6 +463,7 @@ class ContributorProvider extends ChangeNotifier {
 
   @override
   void dispose() {
+    _searchDebounceTimer?.cancel();
     _contributorsSubscription?.cancel();
     _paymentsSubscription?.cancel();
     super.dispose();

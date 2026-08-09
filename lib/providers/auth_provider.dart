@@ -3,18 +3,25 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class AuthProvider extends ChangeNotifier {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  FirebaseAuth? _authInstance;
   User? _user;
   bool _isLoading = false;
   String? _errorMessage;
   StreamSubscription<User?>? _userSubscription;
 
-  AuthProvider() {
-    _user = _auth.currentUser;
-    _userSubscription = _auth.authStateChanges().listen((user) {
-      _user = user;
-      notifyListeners();
-    });
+  FirebaseAuth get _auth => _authInstance ??= FirebaseAuth.instance;
+
+  AuthProvider({FirebaseAuth? authInstance}) : _authInstance = authInstance {
+    try {
+      _user = _auth.currentUser;
+      _userSubscription = _auth.authStateChanges().listen((user) {
+        _user = user;
+        notifyListeners();
+      });
+    } catch (e) {
+      // Uninitialized Firebase in test harness
+      _user = null;
+    }
   }
 
   User? get user => _user;

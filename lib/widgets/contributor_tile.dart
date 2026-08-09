@@ -8,6 +8,7 @@ import 'status_badge.dart';
 class ContributorTile extends StatelessWidget {
   final Contributor contributor;
   final List<Payment> payments;
+  final double? precalculatedPaid;
   final VoidCallback onTap;
   final VoidCallback onRecordPayment;
   final VoidCallback onEdit;
@@ -17,6 +18,7 @@ class ContributorTile extends StatelessWidget {
     super.key,
     required this.contributor,
     required this.payments,
+    this.precalculatedPaid,
     required this.onTap,
     required this.onRecordPayment,
     required this.onEdit,
@@ -26,9 +28,9 @@ class ContributorTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final currencyFormatter = NumberFormat.currency(symbol: '₹', decimalDigits: 0);
-    final amountPaid = contributor.getAmountPaid(payments);
-    final pendingAmount = contributor.getPendingAmount(payments);
-    final status = contributor.getStatus(payments);
+    final amountPaid = precalculatedPaid ?? contributor.getAmountPaid(payments);
+    final pendingAmount = contributor.getPendingAmount(payments, amountPaid);
+    final status = contributor.getStatus(payments, amountPaid);
     final progress = contributor.amountDue > 0
         ? (amountPaid / contributor.amountDue).clamp(0.0, 1.0)
         : 0.0;

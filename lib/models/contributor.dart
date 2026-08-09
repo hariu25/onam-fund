@@ -64,25 +64,27 @@ class Contributor {
     );
   }
 
-  // Calculate total amount paid from contributor's payments list
+  // Calculate total amount paid from contributor's payments list (or pre-indexed payments)
   double getAmountPaid(List<Payment> payments) {
     final memberPayments = payments.where((p) => p.contributorId == id);
     return memberPayments.fold(0.0, (sum, p) => sum + p.amount);
   }
 
-  // Calculate pending remaining balance
-  double getPendingAmount(List<Payment> payments) {
-    final paid = getAmountPaid(payments);
+  // Calculate pending remaining balance given paid amount or payment list
+  double getPendingAmount(List<Payment> payments, [double? precalculatedPaid]) {
+    final paid = precalculatedPaid ?? getAmountPaid(payments);
     final remaining = amountDue - paid;
     return remaining > 0 ? remaining : 0.0;
   }
 
-  // Determine Payment Status based on prompt rules:
-  // - Green dot/icon & "Paid" label when full amount has been received
-  // - Red dot/icon & "Unpaid" label when no payment has been received
-  // - Orange/Yellow dot/icon & "Partial Payment" label when part of amount paid
-  PaymentStatus getStatus(List<Payment> payments) {
-    final paid = getAmountPaid(payments);
+  // Determine Payment Status based on pre-calculated paid amount or payments list
+  PaymentStatus getStatus(List<Payment> payments, [double? precalculatedPaid]) {
+    final paid = precalculatedPaid ?? getAmountPaid(payments);
+    return getStatusFromPaid(paid);
+  }
+
+  /// Fast O(1) status calculation using direct paid amount
+  PaymentStatus getStatusFromPaid(double paid) {
     if (paid >= amountDue && amountDue > 0) {
       return PaymentStatus.paid;
     } else if (paid == 0 || amountDue <= 0) {
