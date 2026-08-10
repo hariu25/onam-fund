@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/contributor.dart';
 import '../models/payment.dart';
 import '../services/storage_service.dart';
@@ -45,9 +46,7 @@ class ContributorProvider extends ChangeNotifier {
   String _sortBy = 'name'; // 'name', 'amountDue', 'amountPaid', 'status'
   bool _sortAscending = true;
 
-  ContributorProvider() {
-    initDataStream();
-  }
+  ContributorProvider();
 
   // Getters
   List<Contributor> get contributors => _contributors;
@@ -68,9 +67,10 @@ class ContributorProvider extends ChangeNotifier {
   }
 
   /// Initialize Firestore real-time snapshot listeners with timing profiling
-  void initDataStream() {
-    if (_contributorsSubscription != null && _paymentsSubscription != null && !_isLoading && _errorMessage == null) {
-      // Stream is already active and healthy
+  bool _hasInitializedDataStream = false;
+
+  void initDataStream() async {
+    if (_hasInitializedDataStream && _contributorsSubscription != null && _paymentsSubscription != null) {
       return;
     }
 
@@ -83,7 +83,12 @@ class ContributorProvider extends ChangeNotifier {
 
     final stopwatch = Stopwatch()..start();
 
-    StorageService.checkAndSeedInitialData().then((_) {
+    try {
+      if (!_hasInitializedDataStream) {
+        await StorageService.checkAndSeedInitialData();
+        _hasInitializedDataStream = true;
+      }
+
       _contributorsSubscription = StorageService.getContributorsStream().listen(
         (contributorsList) {
           final parseTime = stopwatch.elapsedMilliseconds;
@@ -116,11 +121,11 @@ class ContributorProvider extends ChangeNotifier {
           notifyListeners();
         },
       );
-    }).catchError((error) {
+    } catch (error) {
       _isLoading = false;
       _errorMessage = 'Database initialization error: $error';
       notifyListeners();
-    });
+    }
   }
 
   /// Re-index payments into O(1) lookup maps
@@ -179,6 +184,7 @@ class ContributorProvider extends ChangeNotifier {
     _paymentsSubscription?.cancel();
     _contributorsSubscription = null;
     _paymentsSubscription = null;
+    _hasInitializedDataStream = false;
     initDataStream();
   }
 
@@ -357,11 +363,43 @@ class ContributorProvider extends ChangeNotifier {
       );
       await StorageService.savePayment(payment);
     }
+
+    // Save contribution entry to 'fund_entries' collection in Cloud Firestore
+    await FirebaseFirestore.instance.collection('fund_entries').add({
+      'contributorId': contributor.id,
+      'contributorName': contributor.name,
+      'name': contributor.name,
+      'address': contributor.address,
+      'phone': contributor.phone,
+      'amount': contributor.amountDue,
+      'amountDue': contributor.amountDue,
+      'date': contributor.createdAt.toIso8601String(),
+      'notes': contributor.notes,
+      'initialPaymentAmount': initialPaymentAmount,
+      'initialPaymentMethod': initialPaymentMethod,
+      'initialPaymentNotes': initialPaymentNotes,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
   }
 
   // Edit Contributor details & amount due
   Future<void> editContributor(Contributor updatedContributor) async {
     await StorageService.saveContributor(updatedContributor);
+
+    // Save update record to 'fund_entries' collection in Cloud Firestore
+    await FirebaseFirestore.instance.collection('fund_entries').add({
+      'contributorId': updatedContributor.id,
+      'contributorName': updatedContributor.name,
+      'name': updatedContributor.name,
+      'address': updatedContributor.address,
+      'phone': updatedContributor.phone,
+      'amount': updatedContributor.amountDue,
+      'amountDue': updatedContributor.amountDue,
+      'date': DateTime.now().toIso8601String(),
+      'notes': updatedContributor.notes,
+      'isUpdate': true,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
   }
 
   // Delete Contributor and associated payments

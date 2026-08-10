@@ -110,9 +110,9 @@ class ContributorDetailView extends StatelessWidget {
 
         final contributor = provider.contributors[contributorIndex];
         final payments = provider.getPaymentsForContributor(contributor.id);
-        final amountPaid = contributor.getAmountPaid(provider.payments);
-        final pendingAmount = contributor.getPendingAmount(provider.payments);
-        final status = contributor.getStatus(provider.payments);
+        final amountPaid = provider.getAmountPaidForContributor(contributor.id);
+        final pendingAmount = contributor.getPendingAmount(payments, amountPaid);
+        final status = contributor.getStatus(payments, amountPaid);
         final currencyFormatter = NumberFormat.currency(symbol: '₹', decimalDigits: 0);
 
         return Scaffold(

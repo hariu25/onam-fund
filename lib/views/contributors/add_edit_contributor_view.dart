@@ -29,6 +29,8 @@ class _AddEditContributorViewState extends State<AddEditContributorView> {
   String _initialPaymentMethod = 'UPI / GPay';
   late TextEditingController _initialPaymentNotesController;
 
+  bool _isSaving = false;
+
   bool get isEditing => widget.contributor != null;
 
   @override
@@ -57,8 +59,12 @@ class _AddEditContributorViewState extends State<AddEditContributorView> {
     super.dispose();
   }
 
-  void _saveForm() {
+  void _saveForm() async {
     if (_formKey.currentState!.validate()) {
+      setState(() {
+        _isSaving = true;
+      });
+
       final provider = Provider.of<ContributorProvider>(context, listen: false);
 
       final name = _nameController.text.trim();
@@ -67,52 +73,68 @@ class _AddEditContributorViewState extends State<AddEditContributorView> {
       final amountDue = double.parse(_amountDueController.text.trim());
       final notes = _notesController.text.trim().isNotEmpty ? _notesController.text.trim() : null;
 
-      if (isEditing) {
-        final updated = widget.contributor!.copyWith(
-          name: name,
-          address: address,
-          phone: phone,
-          amountDue: amountDue,
-          notes: notes,
-        );
-        provider.editContributor(updated);
-        Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Member "${updated.name}" updated successfully.'),
-            backgroundColor: AppColors.primaryDarkGreen,
-          ),
-        );
-      } else {
-        final memberId = provider.generateMemberId();
-        final newContributor = Contributor(
-          id: memberId,
-          name: name,
-          address: address,
-          phone: phone,
-          amountDue: amountDue,
-          notes: notes,
-        );
+      try {
+        if (isEditing) {
+          final updated = widget.contributor!.copyWith(
+            name: name,
+            address: address,
+            phone: phone,
+            amountDue: amountDue,
+            notes: notes,
+          );
+          await provider.editContributor(updated);
+          if (!mounted) return;
+          Navigator.of(context).pop();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Member "${updated.name}" updated successfully.'),
+              backgroundColor: AppColors.primaryDarkGreen,
+            ),
+          );
+        } else {
+          final memberId = provider.generateMemberId();
+          final newContributor = Contributor(
+            id: memberId,
+            name: name,
+            address: address,
+            phone: phone,
+            amountDue: amountDue,
+            notes: notes,
+          );
 
-        double? initialAmount;
-        if (_recordInitialPayment) {
-          initialAmount = double.tryParse(_initialPaymentAmountController.text.trim());
+          double? initialAmount;
+          if (_recordInitialPayment) {
+            initialAmount = double.tryParse(_initialPaymentAmountController.text.trim());
+          }
+
+          await provider.addContributor(
+            newContributor,
+            initialPaymentAmount: initialAmount,
+            initialPaymentMethod: _initialPaymentMethod,
+            initialPaymentNotes: _initialPaymentNotesController.text.trim().isNotEmpty
+                ? _initialPaymentNotesController.text.trim()
+                : null,
+          );
+
+          if (!mounted) return;
+          Navigator.of(context).pop();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Contribution for "$name" ($memberId) saved successfully!'),
+              backgroundColor: AppColors.primaryDarkGreen,
+            ),
+          );
         }
-
-        provider.addContributor(
-          newContributor,
-          initialPaymentAmount: initialAmount,
-          initialPaymentMethod: _initialPaymentMethod,
-          initialPaymentNotes: _initialPaymentNotesController.text.trim().isNotEmpty
-              ? _initialPaymentNotesController.text.trim()
-              : null,
-        );
-
-        Navigator.of(context).pop();
+      } catch (error) {
+        if (!mounted) return;
+        setState(() {
+          _isSaving = false;
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('New Member "$name" ($memberId) added successfully!'),
-            backgroundColor: AppColors.primaryDarkGreen,
+            content: Text('Failed to save contribution: $error'),
+            backgroundColor: Colors.red.shade700,
+            duration: const Duration(seconds: 4),
           ),
         );
       }
@@ -377,7 +399,7 @@ class _AddEditContributorViewState extends State<AddEditContributorView> {
                     width: double.infinity,
                     height: 52,
                     child: ElevatedButton(
-                      onPressed: _saveForm,
+                      onPressed: _isSaving ? null : _saveForm,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primaryDarkGreen,
                         foregroundColor: AppColors.primaryGold,
@@ -385,10 +407,19 @@ class _AddEditContributorViewState extends State<AddEditContributorView> {
                           borderRadius: BorderRadius.circular(14),
                         ),
                       ),
-                      child: Text(
-                        isEditing ? 'UPDATE MEMBER DETAILS' : 'REGISTER MEMBER',
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 0.5),
-                      ),
+                      child: _isSaving
+                          ? const SizedBox(
+                              height: 24,
+                              width: 24,
+                              child: CircularProgressIndicator(
+                                color: AppColors.primaryGold,
+                                strokeWidth: 2.5,
+                              ),
+                            )
+                          : Text(
+                              isEditing ? 'UPDATE MEMBER DETAILS' : 'REGISTER MEMBER',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+                            ),
                     ),
                   ),
                   const SizedBox(height: 20),

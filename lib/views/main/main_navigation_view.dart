@@ -20,16 +20,21 @@ class _MainNavigationViewState extends State<MainNavigationView> {
     });
   }
 
+  Widget _buildScreen() {
+    switch (_currentIndex) {
+      case 1:
+        return const ContributorListView();
+      case 2:
+        return const SettingsView();
+      default:
+        return DashboardView(
+          onNavigateToContributors: () => _onTabTapped(1),
+        );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final screens = [
-      DashboardView(
-        onNavigateToContributors: () => _onTabTapped(1),
-      ),
-      const ContributorListView(),
-      const SettingsView(),
-    ];
-
     return LayoutBuilder(
       builder: (context, constraints) {
         final isWideScreen = constraints.maxWidth > 800;
@@ -78,7 +83,7 @@ class _MainNavigationViewState extends State<MainNavigationView> {
                   ],
                 ),
                 const VerticalDivider(thickness: 1, width: 1, color: AppColors.cardBorder),
-                Expanded(child: screens[_currentIndex]),
+                Expanded(child: _buildScreen()),
               ],
             ),
           );
@@ -86,10 +91,7 @@ class _MainNavigationViewState extends State<MainNavigationView> {
 
         // Mobile Bottom Navigation Bar
         return Scaffold(
-          body: IndexedStack(
-            index: _currentIndex,
-            children: screens,
-          ),
+          body: _buildScreen(),
           bottomNavigationBar: Container(
             decoration: const BoxDecoration(
               boxShadow: [

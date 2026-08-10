@@ -57,7 +57,6 @@ class DefaultFirebaseOptions {
     projectId: 'onamfund',
     storageBucket: 'onamfund.firebasestorage.app',
   );
-
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyAlC4-CUnUpJxmCPizcZBdxNZL50gPKkAw',
     appId: '1:1092334211125:ios:d84b79bea941b7af35617c',
@@ -66,7 +65,6 @@ class DefaultFirebaseOptions {
     storageBucket: 'onamfund.firebasestorage.app',
     iosBundleId: 'com.onam.fund.onam',
   );
-
   static const FirebaseOptions macos = FirebaseOptions(
     apiKey: 'AIzaSyAlC4-CUnUpJxmCPizcZBdxNZL50gPKkAw',
     appId: '1:1092334211125:ios:d84b79bea941b7af35617c',
