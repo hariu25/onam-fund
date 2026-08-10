@@ -7,8 +7,14 @@ import '../models/payment.dart';
 
 class ExportService {
   // Generate CSV text for contributors and their payment status
-  static String generateCsv(List<Contributor> contributors, List<Payment> payments) {
-    final currencyFormatter = NumberFormat.currency(symbol: 'INR ', decimalDigits: 2);
+  static String generateCsv(
+    List<Contributor> contributors,
+    List<Payment> payments,
+  ) {
+    final currencyFormatter = NumberFormat.currency(
+      symbol: 'INR ',
+      decimalDigits: 2,
+    );
     final List<List<dynamic>> rows = [];
 
     // Header row
@@ -22,7 +28,7 @@ class ExportService {
       'Pending Amount (INR)',
       'Payment Status',
       'Last Payment Date',
-      'Notes'
+      'Notes',
     ]);
 
     // Data rows
@@ -36,7 +42,7 @@ class ExportService {
           : 'N/A';
 
       rows.add([
-        c.id,
+        Contributor.formatMemberId(c.id),
         c.name,
         c.phone,
         c.address,
@@ -49,9 +55,13 @@ class ExportService {
       ]);
     }
 
-    return rows.map((row) {
-      return row.map((cell) => '"${cell.toString().replaceAll('"', '""')}"').join(',');
-    }).join('\n');
+    return rows
+        .map((row) {
+          return row
+              .map((cell) => '"${cell.toString().replaceAll('"', '""')}"')
+              .join(',');
+        })
+        .join('\n');
   }
 
   // Generate & print/save PDF document
@@ -63,7 +73,10 @@ class ExportService {
     required double pendingAmount,
   }) async {
     final pdf = pw.Document();
-    final currencyFormat = NumberFormat.currency(symbol: 'Rs. ', decimalDigits: 0);
+    final currencyFormat = NumberFormat.currency(
+      symbol: 'Rs. ',
+      decimalDigits: 0,
+    );
 
     pdf.addPage(
       pw.MultiPage(
@@ -85,7 +98,7 @@ class ExportService {
                     crossAxisAlignment: pw.CrossAxisAlignment.start,
                     children: [
                       pw.Text(
-                        'ONAM FUND CONTRIBUTION REPORT 2026',
+                        'CONTRIBUTION REPORT',
                         style: pw.TextStyle(
                           color: PdfColor.fromHex('#D4AF37'),
                           fontSize: 18,
@@ -94,7 +107,7 @@ class ExportService {
                       ),
                       pw.SizedBox(height: 4),
                       pw.Text(
-                        'Onam Celebration Committee Member Directory & Payment Summary',
+                        'Payment Summary',
                         style: const pw.TextStyle(
                           color: PdfColors.white,
                           fontSize: 10,
@@ -119,7 +132,10 @@ class ExportService {
             pw.Container(
               padding: const pw.EdgeInsets.all(12),
               decoration: pw.BoxDecoration(
-                border: pw.Border.all(color: PdfColor.fromHex('#D4AF37'), width: 1),
+                border: pw.Border.all(
+                  color: PdfColor.fromHex('#D4AF37'),
+                  width: 1,
+                ),
                 borderRadius: pw.BorderRadius.circular(6),
                 color: PdfColor.fromHex('#FFFDF5'),
               ),
@@ -127,9 +143,18 @@ class ExportService {
                 mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
                 children: [
                   _pdfStatColumn('Total Members', '${contributors.length}'),
-                  _pdfStatColumn('Total Expected', currencyFormat.format(totalExpected)),
-                  _pdfStatColumn('Total Collected', currencyFormat.format(totalCollected)),
-                  _pdfStatColumn('Pending Balance', currencyFormat.format(pendingAmount)),
+                  _pdfStatColumn(
+                    'Total Expected',
+                    currencyFormat.format(totalExpected),
+                  ),
+                  _pdfStatColumn(
+                    'Total Collected',
+                    currencyFormat.format(totalCollected),
+                  ),
+                  _pdfStatColumn(
+                    'Pending Balance',
+                    currencyFormat.format(pendingAmount),
+                  ),
                 ],
               ),
             ),
@@ -148,7 +173,15 @@ class ExportService {
             pw.SizedBox(height: 8),
 
             pw.TableHelper.fromTextArray(
-              headers: ['Member ID', 'Name', 'Phone', 'Due', 'Paid', 'Pending', 'Status'],
+              headers: [
+                'Member ID',
+                'Name',
+                'Phone',
+                'Due',
+                'Paid',
+                'Pending',
+                'Status',
+              ],
               headerStyle: pw.TextStyle(
                 color: PdfColors.white,
                 fontWeight: pw.FontWeight.bold,
@@ -163,7 +196,10 @@ class ExportService {
                 ),
               ),
               cellStyle: const pw.TextStyle(fontSize: 8),
-              cellPadding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+              cellPadding: const pw.EdgeInsets.symmetric(
+                horizontal: 6,
+                vertical: 6,
+              ),
               cellAlignment: pw.Alignment.centerLeft,
               data: contributors.map((c) {
                 final paid = c.getAmountPaid(payments);
@@ -171,7 +207,7 @@ class ExportService {
                 final status = c.getStatus(payments).label;
 
                 return [
-                  c.id,
+                  Contributor.formatMemberId(c.id),
                   c.name,
                   c.phone,
                   currencyFormat.format(c.amountDue),
@@ -188,7 +224,7 @@ class ExportService {
             pw.Align(
               alignment: pw.Alignment.centerRight,
               child: pw.Text(
-                'Generated automatically by Onam Fund Tracker',
+                'Powered by Sambhavana Fund Management',
                 style: pw.TextStyle(
                   fontSize: 8,
                   color: PdfColors.grey600,
@@ -203,7 +239,8 @@ class ExportService {
 
     await Printing.layoutPdf(
       onLayout: (PdfPageFormat format) async => pdf.save(),
-      name: 'Onam_Fund_Report_${DateFormat('yyyyMMdd').format(DateTime.now())}.pdf',
+      name:
+          'Onam_Fund_Report_${DateFormat('yyyyMMdd').format(DateTime.now())}.pdf',
     );
   }
 

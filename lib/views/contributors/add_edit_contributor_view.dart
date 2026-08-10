@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../models/contributor.dart';
 import '../../providers/contributor_provider.dart';
@@ -40,7 +41,9 @@ class _AddEditContributorViewState extends State<AddEditContributorView> {
     _nameController = TextEditingController(text: c?.name ?? '');
     _addressController = TextEditingController(text: c?.address ?? '');
     _phoneController = TextEditingController(text: c?.phone ?? '');
-    _amountDueController = TextEditingController(text: c != null ? c.amountDue.toStringAsFixed(0) : '5000');
+    _amountDueController = TextEditingController(
+      text: c != null ? c.amountDue.toStringAsFixed(0) : '5000',
+    );
     _notesController = TextEditingController(text: c?.notes ?? '');
 
     _initialPaymentAmountController = TextEditingController(text: '5000');
@@ -71,7 +74,9 @@ class _AddEditContributorViewState extends State<AddEditContributorView> {
       final address = _addressController.text.trim();
       final phone = _phoneController.text.trim();
       final amountDue = double.parse(_amountDueController.text.trim());
-      final notes = _notesController.text.trim().isNotEmpty ? _notesController.text.trim() : null;
+      final notes = _notesController.text.trim().isNotEmpty
+          ? _notesController.text.trim()
+          : null;
 
       try {
         if (isEditing) {
@@ -104,14 +109,17 @@ class _AddEditContributorViewState extends State<AddEditContributorView> {
 
           double? initialAmount;
           if (_recordInitialPayment) {
-            initialAmount = double.tryParse(_initialPaymentAmountController.text.trim());
+            initialAmount = double.tryParse(
+              _initialPaymentAmountController.text.trim(),
+            );
           }
 
           await provider.addContributor(
             newContributor,
             initialPaymentAmount: initialAmount,
             initialPaymentMethod: _initialPaymentMethod,
-            initialPaymentNotes: _initialPaymentNotesController.text.trim().isNotEmpty
+            initialPaymentNotes:
+                _initialPaymentNotesController.text.trim().isNotEmpty
                 ? _initialPaymentNotesController.text.trim()
                 : null,
           );
@@ -120,7 +128,9 @@ class _AddEditContributorViewState extends State<AddEditContributorView> {
           Navigator.of(context).pop();
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Contribution for "$name" ($memberId) saved successfully!'),
+              content: Text(
+                'Contribution for "$name" ($memberId) saved successfully!',
+              ),
               backgroundColor: AppColors.primaryDarkGreen,
             ),
           );
@@ -193,7 +203,10 @@ class _AddEditContributorViewState extends State<AddEditContributorView> {
                                 isEditing
                                     ? 'Modify member information or target contribution amount.'
                                     : 'Enter details below to add member to the directory.',
-                                style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.textSecondary,
+                                ),
                               ),
                             ],
                           ),
@@ -218,11 +231,13 @@ class _AddEditContributorViewState extends State<AddEditContributorView> {
                   CustomTextField(
                     controller: _nameController,
                     label: 'Full Name *',
-                    hint: 'e.g. Unnikrishnan Nair',
+                    // hint: 'e.g. Unnikrishnan Nair',
                     prefixIcon: Icons.person,
                     validator: (val) {
-                      if (val == null || val.trim().isEmpty) return 'Please enter contributor name';
-                      if (val.trim().length < 2) return 'Name must be at least 2 characters';
+                      if (val == null || val.trim().isEmpty)
+                        return 'Please enter contributor name';
+                      if (val.trim().length < 2)
+                        return 'Name must be at least 2 characters';
                       return null;
                     },
                   ),
@@ -232,10 +247,11 @@ class _AddEditContributorViewState extends State<AddEditContributorView> {
                   CustomTextField(
                     controller: _addressController,
                     label: 'Address / House Name *',
-                    hint: 'e.g. House #12, MG Road, Kochi',
+                    // hint: 'e.g. House #12, MG Road, Kochi',
                     prefixIcon: Icons.home,
                     validator: (val) {
-                      if (val == null || val.trim().isEmpty) return 'Please enter address';
+                      if (val == null || val.trim().isEmpty)
+                        return 'Please enter address';
                       return null;
                     },
                   ),
@@ -245,12 +261,18 @@ class _AddEditContributorViewState extends State<AddEditContributorView> {
                   CustomTextField(
                     controller: _phoneController,
                     label: 'Phone Number (Recommended)',
-                    hint: 'e.g. 9847012345',
-                    keyboardType: TextInputType.phone,
+                    // hint: 'e.g. 9847012345',
+                    keyboardType: TextInputType.number,
                     prefixIcon: Icons.phone,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                    ],
+                    maxLength: 10,
                     validator: (val) {
-                      if (val != null && val.trim().isNotEmpty && val.trim().length < 8) {
-                        return 'Enter a valid phone number';
+                      if (val != null && val.trim().isNotEmpty) {
+                        if (val.trim().length != 10) {
+                          return 'Enter a valid 10-digit phone number';
+                        }
                       }
                       return null;
                     },
@@ -272,13 +294,17 @@ class _AddEditContributorViewState extends State<AddEditContributorView> {
                   CustomTextField(
                     controller: _amountDueController,
                     label: 'Target Contribution Amount (₹) *',
-                    hint: 'e.g. 5000',
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    // hint: 'e.g. 5000',
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
                     prefixIcon: Icons.currency_rupee,
                     validator: (val) {
-                      if (val == null || val.trim().isEmpty) return 'Enter target amount due';
+                      if (val == null || val.trim().isEmpty)
+                        return 'Enter target amount due';
                       final amount = double.tryParse(val.trim());
-                      if (amount == null || amount <= 0) return 'Enter a valid amount > 0';
+                      if (amount == null || amount <= 0)
+                        return 'Enter a valid amount > 0';
                       return null;
                     },
                     onChanged: (val) {
@@ -293,7 +319,7 @@ class _AddEditContributorViewState extends State<AddEditContributorView> {
                   CustomTextField(
                     controller: _notesController,
                     label: 'Additional Notes (Optional)',
-                    hint: 'e.g. Executive member / Feast sponsor',
+                    // hint: 'e.g. Executive member / Feast sponsor',
                     prefixIcon: Icons.notes,
                     maxLines: 2,
                   ),
@@ -310,17 +336,25 @@ class _AddEditContributorViewState extends State<AddEditContributorView> {
                       activeTrackColor: AppColors.primaryDarkGreen,
                       title: const Text(
                         'Mark Payment Received Immediately',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.primaryDarkGreen),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                          color: AppColors.primaryDarkGreen,
+                        ),
                       ),
                       subtitle: const Text(
                         'Record full or partial payment right now during registration.',
-                        style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textSecondary,
+                        ),
                       ),
                       onChanged: (val) {
                         setState(() {
                           _recordInitialPayment = val;
                           if (val) {
-                            _initialPaymentAmountController.text = _amountDueController.text;
+                            _initialPaymentAmountController.text =
+                                _amountDueController.text;
                           }
                         });
                       },
@@ -333,7 +367,11 @@ class _AddEditContributorViewState extends State<AddEditContributorView> {
                         decoration: BoxDecoration(
                           color: AppColors.statusPaidBg,
                           borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: AppColors.statusPaidDot.withValues(alpha: 0.3)),
+                          border: Border.all(
+                            color: AppColors.statusPaidDot.withValues(
+                              alpha: 0.3,
+                            ),
+                          ),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -341,14 +379,19 @@ class _AddEditContributorViewState extends State<AddEditContributorView> {
                             CustomTextField(
                               controller: _initialPaymentAmountController,
                               label: 'Initial Payment Amount (₹)',
-                              hint: 'e.g. 5000',
-                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                              // hint: 'e.g. 5000',
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                    decimal: true,
+                                  ),
                               prefixIcon: Icons.attach_money,
                               validator: (val) {
                                 if (_recordInitialPayment) {
-                                  if (val == null || val.trim().isEmpty) return 'Enter payment amount';
+                                  if (val == null || val.trim().isEmpty)
+                                    return 'Enter payment amount';
                                   final amt = double.tryParse(val.trim());
-                                  if (amt == null || amt <= 0) return 'Enter a valid amount > 0';
+                                  if (amt == null || amt <= 0)
+                                    return 'Enter a valid amount > 0';
                                 }
                                 return null;
                               },
@@ -366,24 +409,44 @@ class _AddEditContributorViewState extends State<AddEditContributorView> {
                             DropdownButtonFormField<String>(
                               initialValue: _initialPaymentMethod,
                               decoration: const InputDecoration(
-                                prefixIcon: Icon(Icons.payment, color: AppColors.primaryGreen, size: 20),
+                                prefixIcon: Icon(
+                                  Icons.payment,
+                                  color: AppColors.primaryGreen,
+                                  size: 20,
+                                ),
                               ),
                               items: const [
-                                DropdownMenuItem(value: 'UPI / GPay', child: Text('UPI / GPay')),
-                                DropdownMenuItem(value: 'PhonePe / Paytm', child: Text('PhonePe / Paytm')),
-                                DropdownMenuItem(value: 'Cash', child: Text('Cash')),
-                                DropdownMenuItem(value: 'Bank Transfer (NEFT/IMPS)', child: Text('Bank Transfer')),
-                                DropdownMenuItem(value: 'Cheque', child: Text('Cheque')),
+                                DropdownMenuItem(
+                                  value: 'UPI / GPay',
+                                  child: Text('UPI / GPay'),
+                                ),
+                                DropdownMenuItem(
+                                  value: 'PhonePe / Paytm',
+                                  child: Text('PhonePe / Paytm'),
+                                ),
+                                DropdownMenuItem(
+                                  value: 'Cash',
+                                  child: Text('Cash'),
+                                ),
+                                DropdownMenuItem(
+                                  value: 'Bank Transfer (NEFT/IMPS)',
+                                  child: Text('Bank Transfer'),
+                                ),
+                                DropdownMenuItem(
+                                  value: 'Cheque',
+                                  child: Text('Cheque'),
+                                ),
                               ],
                               onChanged: (val) {
-                                if (val != null) setState(() => _initialPaymentMethod = val);
+                                if (val != null)
+                                  setState(() => _initialPaymentMethod = val);
                               },
                             ),
                             const SizedBox(height: 12),
                             CustomTextField(
                               controller: _initialPaymentNotesController,
                               label: 'Payment Note / Ref (Optional)',
-                              hint: 'e.g. Cash received by Treasurer',
+                              // hint: 'e.g. Cash received by Treasurer',
                               prefixIcon: Icons.receipt_long,
                             ),
                           ],
@@ -417,8 +480,14 @@ class _AddEditContributorViewState extends State<AddEditContributorView> {
                               ),
                             )
                           : Text(
-                              isEditing ? 'UPDATE MEMBER DETAILS' : 'REGISTER MEMBER',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+                              isEditing
+                                  ? 'UPDATE MEMBER DETAILS'
+                                  : 'REGISTER MEMBER',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.5,
+                              ),
                             ),
                     ),
                   ),

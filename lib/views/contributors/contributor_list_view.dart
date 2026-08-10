@@ -205,7 +205,7 @@ class ContributorListView extends StatelessWidget {
                         Text(
                           provider.searchQuery.isNotEmpty || provider.statusFilter != 'All'
                               ? 'Try adjusting your search query or status filters.'
-                              : 'Tap "Add Member" below to get started.',
+                              : 'Tap "Add Member" to get started.',
                           style: const TextStyle(fontSize: 13, color: AppColors.textMuted),
                         ),
                         const SizedBox(height: 16),
@@ -298,17 +298,6 @@ class ContributorListView extends StatelessWidget {
             ],
           );
         },
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => const AddEditContributorView(),
-            ),
-          );
-        },
-        icon: const Icon(Icons.person_add),
-        label: const Text('Add Member', style: TextStyle(fontWeight: FontWeight.bold)),
       ),
     );
   }

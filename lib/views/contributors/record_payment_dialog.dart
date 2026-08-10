@@ -77,8 +77,17 @@ class _RecordPaymentDialogState extends State<RecordPaymentDialog> {
       },
     );
     if (picked != null) {
+      final now = DateTime.now();
       setState(() {
-        _selectedDate = picked;
+        _selectedDate = DateTime(
+          picked.year,
+          picked.month,
+          picked.day,
+          now.hour,
+          now.minute,
+          now.second,
+          now.millisecond,
+        );
       });
     }
   }

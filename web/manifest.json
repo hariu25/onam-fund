@@ -1,11 +1,11 @@
 {
-    "name": "onam",
-    "short_name": "onam",
+    "name": "സംഭാവന - Contribution & Fund Management",
+    "short_name": "സംഭാവന",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#064E3B",
+    "theme_color": "#064E3B",
+    "description": "Sambhavana - Contribution & Fund Management",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

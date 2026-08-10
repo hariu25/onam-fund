@@ -40,7 +40,7 @@ class OnamFundApp extends StatelessWidget {
       child: Consumer<AuthProvider>(
         builder: (context, auth, child) {
           return MaterialApp(
-            title: 'Onam Fund Contribution Tracker',
+            title: 'സംഭാവന - Contribution & Fund Management',
             debugShowCheckedModeBanner: false,
             theme: AppTheme.lightTheme,
             home: auth.isLoggedIn ? const MainNavigationView() : const LoginView(),

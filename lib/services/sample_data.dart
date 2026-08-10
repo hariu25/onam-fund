@@ -6,7 +6,7 @@ class SampleData {
     final now = DateTime.now();
     return [
       Contributor(
-        id: 'ONAM-1001',
+        id: 'SMB-1001',
         name: 'Unnikrishnan Nair',
         address: 'House #42, Rose Villa, MG Road, Kochi',
         phone: '9847012345',
@@ -15,7 +15,7 @@ class SampleData {
         createdAt: now.subtract(const Duration(days: 15)),
       ),
       Contributor(
-        id: 'ONAM-1002',
+        id: 'SMB-1002',
         name: 'Lakshmi Devi',
         address: 'Flat 3B, Skyine Apartments, Trivandrum',
         phone: '9447154321',
@@ -24,7 +24,7 @@ class SampleData {
         createdAt: now.subtract(const Duration(days: 14)),
       ),
       Contributor(
-        id: 'ONAM-1003',
+        id: 'SMB-1003',
         name: 'Rahul Menon',
         address: 'Plot 18, Coconut Grove, Thrissur',
         phone: '9745889911',
@@ -33,7 +33,7 @@ class SampleData {
         createdAt: now.subtract(const Duration(days: 12)),
       ),
       Contributor(
-        id: 'ONAM-1004',
+        id: 'SMB-1004',
         name: 'Dr. K.V. Thomas',
         address: 'Lotus Haven, Beach Road, Calicut',
         phone: '9895011223',
@@ -42,7 +42,7 @@ class SampleData {
         createdAt: now.subtract(const Duration(days: 10)),
       ),
       Contributor(
-        id: 'ONAM-1005',
+        id: 'SMB-1005',
         name: 'Ananya Pillai',
         address: 'No. 7, Palm Avenue, Kottayam',
         phone: '9496332211',
@@ -51,7 +51,7 @@ class SampleData {
         createdAt: now.subtract(const Duration(days: 8)),
       ),
       Contributor(
-        id: 'ONAM-1006',
+        id: 'SMB-1006',
         name: 'Vijayakumar P.',
         address: 'Vallam, Alappuzha',
         phone: '9605447788',
@@ -60,7 +60,7 @@ class SampleData {
         createdAt: now.subtract(const Duration(days: 6)),
       ),
       Contributor(
-        id: 'ONAM-1007',
+        id: 'SMB-1007',
         name: 'Swapna Suresh',
         address: 'Green Gardens, Palakkad',
         phone: '9123456789',
@@ -69,7 +69,7 @@ class SampleData {
         createdAt: now.subtract(const Duration(days: 5)),
       ),
       Contributor(
-        id: 'ONAM-1008',
+        id: 'SMB-1008',
         name: 'Gautham Krishna',
         address: 'Door 15, Lake View, Kollam',
         phone: '9988776655',
@@ -83,30 +83,30 @@ class SampleData {
   static List<Payment> getInitialPayments() {
     final now = DateTime.now();
     return [
-      // Unnikrishnan Nair (Paid in Full - ONAM-1001)
+      // Unnikrishnan Nair (Paid in Full - SMB-1001)
       Payment(
         id: 'PAY-1001-1',
-        contributorId: 'ONAM-1001',
+        contributorId: 'SMB-1001',
         amount: 5000.0,
         paymentDate: now.subtract(const Duration(days: 10)),
         paymentMethod: 'UPI / GPay',
         notes: 'UPI Ref: 42391088219',
       ),
-      // Lakshmi Devi (Partial Payment - ONAM-1002)
+      // Lakshmi Devi (Partial Payment - SMB-1002)
       Payment(
         id: 'PAY-1002-1',
-        contributorId: 'ONAM-1002',
+        contributorId: 'SMB-1002',
         amount: 2500.0,
         paymentDate: now.subtract(const Duration(days: 7)),
         paymentMethod: 'Cash',
         notes: 'Received by Treasurer at Committee meeting',
       ),
-      // Rahul Menon (Unpaid - 0 payments for ONAM-1003)
+      // Rahul Menon (Unpaid - 0 payments for SMB-1003)
       
-      // Dr. K.V. Thomas (Multiple Payments total 10,000 - ONAM-1004)
+      // Dr. K.V. Thomas (Multiple Payments total 10,000 - SMB-1004)
       Payment(
         id: 'PAY-1004-1',
-        contributorId: 'ONAM-1004',
+        contributorId: 'SMB-1004',
         amount: 5000.0,
         paymentDate: now.subtract(const Duration(days: 8)),
         paymentMethod: 'Bank Transfer',
@@ -114,35 +114,35 @@ class SampleData {
       ),
       Payment(
         id: 'PAY-1004-2',
-        contributorId: 'ONAM-1004',
+        contributorId: 'SMB-1004',
         amount: 5000.0,
         paymentDate: now.subtract(const Duration(days: 2)),
         paymentMethod: 'UPI / PhonePe',
         notes: 'Final installment paid',
       ),
-      // Ananya Pillai (Paid in Full - ONAM-1005)
+      // Ananya Pillai (Paid in Full - SMB-1005)
       Payment(
         id: 'PAY-1005-1',
-        contributorId: 'ONAM-1005',
+        contributorId: 'SMB-1005',
         amount: 3500.0,
         paymentDate: now.subtract(const Duration(days: 4)),
         paymentMethod: 'UPI / Paytm',
         notes: 'Paid online',
       ),
-      // Vijayakumar P. (Partial Payment - ONAM-1006)
+      // Vijayakumar P. (Partial Payment - SMB-1006)
       Payment(
         id: 'PAY-1006-1',
-        contributorId: 'ONAM-1006',
+        contributorId: 'SMB-1006',
         amount: 1500.0,
         paymentDate: now.subtract(const Duration(days: 3)),
         paymentMethod: 'Cash',
         notes: 'Advance given',
       ),
-      // Swapna Suresh (Unpaid - ONAM-1007)
-      // Gautham Krishna (Paid in Full - ONAM-1008)
+      // Swapna Suresh (Unpaid - SMB-1007)
+      // Gautham Krishna (Paid in Full - SMB-1008)
       Payment(
         id: 'PAY-1008-1',
-        contributorId: 'ONAM-1008',
+        contributorId: 'SMB-1008',
         amount: 5000.0,
         paymentDate: now.subtract(const Duration(days: 1)),
         paymentMethod: 'Bank Transfer',

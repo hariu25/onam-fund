@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/contributor_provider.dart';
@@ -10,7 +11,10 @@ class SettingsView extends StatelessWidget {
   const SettingsView({super.key});
 
   void _showCsvDialog(BuildContext context, ContributorProvider provider) {
-    final csvData = ExportService.generateCsv(provider.contributors, provider.payments);
+    final csvData = ExportService.generateCsv(
+      provider.contributors,
+      provider.payments,
+    );
 
     showDialog(
       context: context,
@@ -102,7 +106,10 @@ class SettingsView extends StatelessWidget {
                 ),
               );
             },
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryDarkGreen, foregroundColor: AppColors.primaryGold),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryDarkGreen,
+              foregroundColor: AppColors.primaryGold,
+            ),
             child: const Text('RELOAD SAMPLES'),
           ),
         ],
@@ -140,7 +147,10 @@ class SettingsView extends StatelessWidget {
                 ),
               );
             },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
             child: const Text('CLEAR ALL'),
           ),
         ],
@@ -154,9 +164,7 @@ class SettingsView extends StatelessWidget {
     final provider = Provider.of<ContributorProvider>(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Settings & Admin Controls'),
-      ),
+      appBar: AppBar(title: const Text('Settings & Admin Controls')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20.0),
         child: Center(
@@ -177,10 +185,17 @@ class SettingsView extends StatelessWidget {
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             color: AppColors.primaryDarkGreen,
-                            border: Border.all(color: AppColors.primaryGold, width: 2),
+                            border: Border.all(
+                              color: AppColors.primaryGold,
+                              width: 2,
+                            ),
                           ),
                           child: const Center(
-                            child: Icon(Icons.admin_panel_settings, color: AppColors.primaryGold, size: 32),
+                            child: Icon(
+                              Icons.admin_panel_settings,
+                              color: AppColors.primaryGold,
+                              size: 32,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 16),
@@ -199,13 +214,21 @@ class SettingsView extends StatelessWidget {
                               const SizedBox(height: 2),
                               Text(
                                 auth.adminEmail,
-                                style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  color: AppColors.textSecondary,
+                                ),
                               ),
                               const SizedBox(height: 4),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 2,
+                                ),
                                 decoration: BoxDecoration(
-                                  color: AppColors.primaryGold.withValues(alpha: 0.2),
+                                  color: AppColors.primaryGold.withValues(
+                                    alpha: 0.2,
+                                  ),
                                   borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: const Text(
@@ -251,10 +274,18 @@ class SettingsView extends StatelessWidget {
                       ListTile(
                         leading: const CircleAvatar(
                           backgroundColor: AppColors.warmGoldBg,
-                          child: Icon(Icons.picture_as_pdf, color: AppColors.primaryDarkGreen),
+                          child: Icon(
+                            Icons.picture_as_pdf,
+                            color: AppColors.primaryDarkGreen,
+                          ),
                         ),
-                        title: const Text('Export Official PDF Report', style: TextStyle(fontWeight: FontWeight.bold)),
-                        subtitle: const Text('Generate printable PDF report with headers & summary table.'),
+                        title: const Text(
+                          'Export Official PDF Report',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        subtitle: const Text(
+                          'Generate printable PDF report with headers & summary table.',
+                        ),
                         trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                         onTap: () {
                           ExportService.generateAndPrintPdf(
@@ -270,10 +301,18 @@ class SettingsView extends StatelessWidget {
                       ListTile(
                         leading: const CircleAvatar(
                           backgroundColor: AppColors.warmGoldBg,
-                          child: Icon(Icons.table_chart, color: AppColors.primaryGreen),
+                          child: Icon(
+                            Icons.table_chart,
+                            color: AppColors.primaryGreen,
+                          ),
                         ),
-                        title: const Text('Export CSV Table', style: TextStyle(fontWeight: FontWeight.bold)),
-                        subtitle: const Text('Copy or download spreadsheet data in CSV format.'),
+                        title: const Text(
+                          'Export CSV Table',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        subtitle: const Text(
+                          'Copy or download spreadsheet data in CSV format.',
+                        ),
                         trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                         onTap: () => _showCsvDialog(context, provider),
                       ),
@@ -300,10 +339,18 @@ class SettingsView extends StatelessWidget {
                       ListTile(
                         leading: const CircleAvatar(
                           backgroundColor: AppColors.warmGoldBg,
-                          child: Icon(Icons.restart_alt, color: AppColors.primaryDarkGreen),
+                          child: Icon(
+                            Icons.restart_alt,
+                            color: AppColors.primaryDarkGreen,
+                          ),
                         ),
-                        title: const Text('Reload Sample Onam Data', style: TextStyle(fontWeight: FontWeight.bold)),
-                        subtitle: const Text('Reset Cloud Firestore storage with pre-filled test members.'),
+                        title: const Text(
+                          'Reload Sample  Data',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        subtitle: const Text(
+                          'Reset Cloud Firestore storage with pre-filled test members.',
+                        ),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () => _confirmResetData(context, provider),
                       ),
@@ -311,11 +358,25 @@ class SettingsView extends StatelessWidget {
                       ListTile(
                         leading: CircleAvatar(
                           backgroundColor: Colors.red.shade50,
-                          child: const Icon(Icons.delete_forever, color: Colors.red),
+                          child: const Icon(
+                            Icons.delete_forever,
+                            color: Colors.red,
+                          ),
                         ),
-                        title: const Text('Clear All Members & Payments', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
-                        subtitle: const Text('Wipe all Cloud Firestore data clean.'),
-                        trailing: const Icon(Icons.chevron_right, color: Colors.red),
+                        title: const Text(
+                          'Clear All Members & Payments',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.red,
+                          ),
+                        ),
+                        subtitle: const Text(
+                          'Wipe all Cloud Firestore data clean.',
+                        ),
+                        trailing: const Icon(
+                          Icons.chevron_right,
+                          color: Colors.red,
+                        ),
                         onTap: () => _confirmClearData(context, provider),
                       ),
                     ],
@@ -330,28 +391,41 @@ class SettingsView extends StatelessWidget {
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
-                      colors: [AppColors.primaryDarkGreen, AppColors.primaryGreen],
+                      colors: [
+                        AppColors.primaryDarkGreen,
+                        AppColors.primaryGreen,
+                      ],
                     ),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: AppColors.primaryGold, width: 1.5),
+                    border: Border.all(
+                      color: AppColors.primaryGold,
+                      width: 1.5,
+                    ),
                   ),
-                  child: const Column(
+                  child: Column(
                     children: [
-                      Icon(Icons.park_rounded, color: AppColors.primaryGold, size: 40),
-                      SizedBox(height: 8),
+                      const Icon(
+                        Icons.payments_rounded,
+                        color: AppColors.primaryGold,
+                        size: 40,
+                      ),
+                      const SizedBox(height: 8),
                       Text(
-                        'എല്ലാവർക്കും ഹൃദയം നിറഞ്ഞ ഓണാശംസകൾ!',
-                        style: TextStyle(
-                          fontSize: 18,
+                        'സംഭാവന - Fund Collection & Contribution Manager',
+                        style: GoogleFonts.notoSansMalayalam(
+                          fontSize: 16,
                           fontWeight: FontWeight.bold,
                           color: AppColors.primaryGold,
                         ),
                         textAlign: TextAlign.center,
                       ),
-                      SizedBox(height: 4),
+                      const SizedBox(height: 4),
                       Text(
-                        'Happy Onam 2026 • Fund Management System v1.0',
-                        style: TextStyle(fontSize: 12, color: Colors.white70),
+                        'സംഭാവന പോർട്ടൽ • System v1.0',
+                        style: GoogleFonts.notoSansMalayalam(
+                          fontSize: 12,
+                          color: Colors.white70,
+                        ),
                       ),
                     ],
                   ),

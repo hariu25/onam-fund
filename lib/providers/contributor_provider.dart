@@ -46,11 +46,41 @@ class ContributorProvider extends ChangeNotifier {
   String _sortBy = 'name'; // 'name', 'amountDue', 'amountPaid', 'status'
   bool _sortAscending = true;
 
-  ContributorProvider();
+  ContributorProvider() {
+    initDataStream();
+  }
+
 
   // Getters
   List<Contributor> get contributors => _contributors;
   List<Payment> get payments => _payments;
+
+  /// Returns the latest 5 payment transactions sorted by paymentDate in descending order.
+  /// Only actual payment transactions (amount > 0) are included.
+  List<Payment> get recentPayments {
+    final validPayments = _payments.where((p) => p.amount > 0).toList();
+    validPayments.sort((a, b) {
+      final dateCmp = b.paymentDate.compareTo(a.paymentDate);
+      if (dateCmp != 0) return dateCmp;
+      return b.id.compareTo(a.id);
+    });
+    return validPayments.take(5).toList();
+  }
+
+  /// Testing helper method to set contributors directly without Firebase
+  void setMockContributors(List<Contributor> list) {
+    _contributors = list;
+    _invalidateCaches();
+    notifyListeners();
+  }
+
+  /// Testing helper method to set payments directly without Firebase
+  void setMockPayments(List<Payment> list) {
+    _payments = list;
+    _reindexPayments();
+    _invalidateCaches();
+    notifyListeners();
+  }
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   String get searchQuery => _searchQuery;
@@ -195,8 +225,8 @@ class ContributorProvider extends ChangeNotifier {
     if (!_metricsDirty) return;
     final sw = Stopwatch()..start();
 
-    _totalExpectedCache = _contributors.fold(0.0, (sum, c) => sum + c.amountDue);
-    _totalCollectedCache = _payments.fold(0.0, (sum, p) => sum + p.amount);
+    _totalExpectedCache = _contributors.fold(0.0, (acc, c) => acc + c.amountDue);
+    _totalCollectedCache = _payments.fold(0.0, (acc, p) => acc + p.amount);
 
     int paid = 0;
     int unpaid = 0;
@@ -409,12 +439,29 @@ class ContributorProvider extends ChangeNotifier {
 
   // Record Payment
   Future<void> addPayment(Payment payment) async {
-    await StorageService.savePayment(payment);
+    try {
+      await StorageService.savePayment(payment);
+    } catch (_) {}
+    final existingIndex = _payments.indexWhere((p) => p.id == payment.id);
+    if (existingIndex != -1) {
+      _payments[existingIndex] = payment;
+    } else {
+      _payments.add(payment);
+    }
+    _reindexPayments();
+    _invalidateCaches();
+    notifyListeners();
   }
 
   // Delete Payment
   Future<void> deletePayment(String paymentId) async {
-    await StorageService.deletePayment(paymentId);
+    try {
+      await StorageService.deletePayment(paymentId);
+    } catch (_) {}
+    _payments.removeWhere((p) => p.id == paymentId);
+    _reindexPayments();
+    _invalidateCaches();
+    notifyListeners();
   }
 
   // Search & Filter Setters with Debouncing
@@ -484,9 +531,11 @@ class ContributorProvider extends ChangeNotifier {
     }
   }
 
-  // Generate Unique Member ID
+  // Generate Unique Member ID with SMB prefix and 4-digit formatting
   String generateMemberId() {
     int maxIdNum = 1000;
+    final existingIds = _contributors.map((c) => c.id.toUpperCase()).toSet();
+
     for (final c in _contributors) {
       final parts = c.id.split('-');
       if (parts.length == 2) {
@@ -496,7 +545,14 @@ class ContributorProvider extends ChangeNotifier {
         }
       }
     }
-    return 'ONAM-${maxIdNum + 1}';
+
+    int nextNum = maxIdNum + 1;
+    String candidateId = 'SMB-${nextNum.toString().padLeft(4, '0')}';
+    while (existingIds.contains(candidateId.toUpperCase())) {
+      nextNum++;
+      candidateId = 'SMB-${nextNum.toString().padLeft(4, '0')}';
+    }
+    return candidateId;
   }
 
   @override

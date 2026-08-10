@@ -1,6 +1,4 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:onam/models/contributor.dart';
-import 'package:onam/models/payment.dart';
 import 'package:onam/providers/contributor_provider.dart';
 
 void main() {

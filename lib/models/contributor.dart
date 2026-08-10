@@ -20,7 +20,7 @@ extension PaymentStatusExtension on PaymentStatus {
 }
 
 class Contributor {
-  final String id; // Unique Member ID (e.g. ONAM-1001)
+  final String id; // Unique Member ID (e.g. SMB-1001)
   final String name;
   final String address;
   final String phone;
@@ -38,6 +38,28 @@ class Contributor {
     DateTime? createdAt,
   }) : createdAt = createdAt ?? DateTime.now();
 
+  /// Centralized Member ID Formatter: converts any legacy ONAM- prefix or numeric ID
+  /// to the standard SMB-{4-digit sequence} format (e.g. SMB-1001).
+  static String formatMemberId(String rawId) {
+    if (rawId.trim().isEmpty) return rawId;
+    final trimmed = rawId.trim();
+    if (trimmed.toUpperCase().startsWith('ONAM-')) {
+      final numPart = trimmed.substring(5).padLeft(4, '0');
+      return 'SMB-$numPart';
+    }
+    if (trimmed.toUpperCase().startsWith('SMB-')) {
+      final numPart = trimmed.substring(4).padLeft(4, '0');
+      return 'SMB-$numPart';
+    }
+    if (RegExp(r'^\d+$').hasMatch(trimmed)) {
+      return 'SMB-${trimmed.padLeft(4, '0')}';
+    }
+    return trimmed;
+  }
+
+  /// Returns the formatted member ID using standard SMB-{4-digit} format.
+  String get formattedId => formatMemberId(id);
+
   Map<String, dynamic> toMap() {
     return {
       'id': id,
@@ -51,8 +73,10 @@ class Contributor {
   }
 
   factory Contributor.fromMap(Map<String, dynamic> map) {
+    final rawId = map['id'] ?? '';
+    final normalizedId = formatMemberId(rawId);
     return Contributor(
-      id: map['id'] ?? '',
+      id: normalizedId.isNotEmpty ? normalizedId : rawId,
       name: map['name'] ?? '',
       address: map['address'] ?? '',
       phone: map['phone'] ?? '',
@@ -85,12 +109,15 @@ class Contributor {
 
   /// Fast O(1) status calculation using direct paid amount
   PaymentStatus getStatusFromPaid(double paid) {
-    if (paid >= amountDue && amountDue > 0) {
+    if (amountDue <= 0) {
+      return paid > 0 ? PaymentStatus.paid : PaymentStatus.unpaid;
+    }
+    if (paid >= amountDue) {
       return PaymentStatus.paid;
-    } else if (paid == 0 || amountDue <= 0) {
-      return PaymentStatus.unpaid;
-    } else {
+    } else if (paid > 0) {
       return PaymentStatus.partial;
+    } else {
+      return PaymentStatus.unpaid;
     }
   }
 

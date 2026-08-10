@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 class Payment {
   final String id;
   final String contributorId;
+  final String? memberName;
   final double amount;
   final DateTime paymentDate;
   final String paymentMethod; // Cash, UPI, Bank Transfer, Cheque, GPay, etc.
@@ -11,6 +12,7 @@ class Payment {
   Payment({
     required this.id,
     required this.contributorId,
+    this.memberName,
     required this.amount,
     required this.paymentDate,
     required this.paymentMethod,
@@ -21,6 +23,7 @@ class Payment {
     return {
       'id': id,
       'contributorId': contributorId,
+      'memberName': memberName,
       'amount': amount,
       'paymentDate': paymentDate.toIso8601String(),
       'paymentMethod': paymentMethod,
@@ -32,6 +35,7 @@ class Payment {
     return Payment(
       id: map['id'] ?? '',
       contributorId: map['contributorId'] ?? '',
+      memberName: map['memberName'] ?? map['contributorName'] ?? map['name'],
       amount: (map['amount'] as num?)?.toDouble() ?? 0.0,
       paymentDate: map['paymentDate'] != null
           ? DateTime.parse(map['paymentDate'])
@@ -52,6 +56,7 @@ class Payment {
   Payment copyWith({
     String? id,
     String? contributorId,
+    String? memberName,
     double? amount,
     DateTime? paymentDate,
     String? paymentMethod,
@@ -60,6 +65,7 @@ class Payment {
     return Payment(
       id: id ?? this.id,
       contributorId: contributorId ?? this.contributorId,
+      memberName: memberName ?? this.memberName,
       amount: amount ?? this.amount,
       paymentDate: paymentDate ?? this.paymentDate,
       paymentMethod: paymentMethod ?? this.paymentMethod,

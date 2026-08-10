@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../theme/app_colors.dart';
 
 class CustomTextField extends StatelessWidget {
@@ -13,6 +14,8 @@ class CustomTextField extends StatelessWidget {
   final Widget? suffixIcon;
   final FocusNode? focusNode;
   final ValueChanged<String>? onChanged;
+  final List<TextInputFormatter>? inputFormatters;
+  final int? maxLength;
 
   const CustomTextField({
     super.key,
@@ -27,6 +30,8 @@ class CustomTextField extends StatelessWidget {
     this.suffixIcon,
     this.focusNode,
     this.onChanged,
+    this.inputFormatters,
+    this.maxLength,
   });
 
   @override
@@ -51,6 +56,8 @@ class CustomTextField extends StatelessWidget {
           obscureText: isObscure,
           focusNode: focusNode,
           onChanged: onChanged,
+          inputFormatters: inputFormatters,
+          maxLength: maxLength,
           style: const TextStyle(
             fontSize: 15,
             color: AppColors.textPrimary,
@@ -60,6 +67,7 @@ class CustomTextField extends StatelessWidget {
             prefixIcon: prefixIcon != null ? Icon(prefixIcon, color: AppColors.primaryGreen, size: 20) : null,
             suffixIcon: suffixIcon,
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            counterText: '',
           ),
         ),
       ],

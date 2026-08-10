@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../theme/app_colors.dart';
@@ -111,7 +112,7 @@ class _LoginViewState extends State<LoginView> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          // Onam Logo / Emblem
+                          // Sambhavana Logo / Emblem
                           Container(
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
@@ -120,33 +121,34 @@ class _LoginViewState extends State<LoginView> {
                               border: Border.all(color: AppColors.primaryGold, width: 2),
                             ),
                             child: const Icon(
-                              Icons.park_rounded,
-                              size: 44,
+                              Icons.payments_rounded,
+                              size: 40,
                               color: AppColors.primaryGold,
                             ),
                           ),
                           const SizedBox(height: 16),
 
                           // App Title & Subtitle
-                          const Text(
-                            'Onam Fund Manager',
-                            style: TextStyle(
-                              fontSize: 24,
+                          Text(
+                            'സംഭാവന',
+                            style: GoogleFonts.notoSansMalayalam(
+                              fontSize: 28,
                               fontWeight: FontWeight.bold,
                               color: AppColors.primaryDarkGreen,
                               letterSpacing: 0.5,
                             ),
                           ),
                           const SizedBox(height: 4),
-                          const Text(
-                            'ഓണം ആഘോഷ സംഭാവന പോർട്ടൽ',
-                            style: TextStyle(
-                              fontSize: 14,
+                          Text(
+                            'സംഭാവന പോർട്ടൽ • Fund Collection',
+                            style: GoogleFonts.notoSansMalayalam(
+                              fontSize: 13,
                               fontWeight: FontWeight.w600,
                               color: AppColors.primaryGold,
                             ),
                           ),
                           const SizedBox(height: 20),
+
 
                           // Auth Mode Selector Tabs
                           Container(
