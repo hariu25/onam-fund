@@ -185,7 +185,6 @@ class _RecordPaymentDialogState extends State<RecordPaymentDialog> {
               CustomTextField(
                 controller: _amountController,
                 label: 'Payment Amount Received (₹)',
-                hint: 'e.g. 2500',
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 prefixIcon: Icons.currency_rupee,
                 validator: (val) {
@@ -293,7 +292,6 @@ class _RecordPaymentDialogState extends State<RecordPaymentDialog> {
               CustomTextField(
                 controller: _notesController,
                 label: 'Payment Notes / Reference No. (Optional)',
-                hint: 'e.g. UPI Ref: 981273912',
                 prefixIcon: Icons.notes,
               ),
             ],

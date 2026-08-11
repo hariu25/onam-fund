@@ -245,7 +245,6 @@ class _LoginViewState extends State<LoginView> {
                           CustomTextField(
                             controller: _emailController,
                             label: 'Username / Email',
-                            hint: 'e.g. admin@onam.org or admin',
                             prefixIcon: Icons.email_outlined,
                             keyboardType: TextInputType.emailAddress,
                             validator: (val) {
@@ -261,7 +260,6 @@ class _LoginViewState extends State<LoginView> {
                           CustomTextField(
                             controller: _passwordController,
                             label: 'Password',
-                            hint: 'Enter password (min 6 characters)',
                             prefixIcon: Icons.lock_outline,
                             isObscure: _obscurePassword,
                             suffixIcon: IconButton(
@@ -290,7 +288,6 @@ class _LoginViewState extends State<LoginView> {
                             CustomTextField(
                               controller: _confirmPasswordController,
                               label: 'Confirm Password',
-                              hint: 'Re-enter password',
                               prefixIcon: Icons.lock_outline,
                               isObscure: _obscureConfirmPassword,
                               suffixIcon: IconButton(

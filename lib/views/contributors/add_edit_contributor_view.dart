@@ -231,7 +231,6 @@ class _AddEditContributorViewState extends State<AddEditContributorView> {
                   CustomTextField(
                     controller: _nameController,
                     label: 'Full Name *',
-                    // hint: 'e.g. Unnikrishnan Nair',
                     prefixIcon: Icons.person,
                     validator: (val) {
                       if (val == null || val.trim().isEmpty) {
@@ -249,7 +248,6 @@ class _AddEditContributorViewState extends State<AddEditContributorView> {
                   CustomTextField(
                     controller: _addressController,
                     label: 'Address / House Name *',
-                    // hint: 'e.g. House #12, MG Road, Kochi',
                     prefixIcon: Icons.home,
                     validator: (val) {
                       if (val == null || val.trim().isEmpty) {
@@ -264,7 +262,6 @@ class _AddEditContributorViewState extends State<AddEditContributorView> {
                   CustomTextField(
                     controller: _phoneController,
                     label: 'Phone Number (Recommended)',
-                    // hint: 'e.g. 9847012345',
                     keyboardType: TextInputType.number,
                     prefixIcon: Icons.phone,
                     inputFormatters: [
@@ -297,7 +294,6 @@ class _AddEditContributorViewState extends State<AddEditContributorView> {
                   CustomTextField(
                     controller: _amountDueController,
                     label: 'Target Contribution Amount (₹) *',
-                    // hint: 'e.g. 5000',
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
                     ),
@@ -324,7 +320,6 @@ class _AddEditContributorViewState extends State<AddEditContributorView> {
                   CustomTextField(
                     controller: _notesController,
                     label: 'Additional Notes (Optional)',
-                    // hint: 'e.g. Executive member / Feast sponsor',
                     prefixIcon: Icons.notes,
                     maxLines: 2,
                   ),
@@ -384,7 +379,6 @@ class _AddEditContributorViewState extends State<AddEditContributorView> {
                             CustomTextField(
                               controller: _initialPaymentAmountController,
                               label: 'Initial Payment Amount (₹)',
-                              // hint: 'e.g. 5000',
                               keyboardType:
                                   const TextInputType.numberWithOptions(
                                     decimal: true,
@@ -454,7 +448,6 @@ class _AddEditContributorViewState extends State<AddEditContributorView> {
                             CustomTextField(
                               controller: _initialPaymentNotesController,
                               label: 'Payment Note / Ref (Optional)',
-                              // hint: 'e.g. Cash received by Treasurer',
                               prefixIcon: Icons.receipt_long,
                             ),
                           ],

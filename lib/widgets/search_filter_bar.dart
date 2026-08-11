@@ -33,7 +33,6 @@ class SearchFilterBar extends StatelessWidget {
               child: TextField(
                 onChanged: onSearchChanged,
                 decoration: InputDecoration(
-                  hintText: 'Search by Name, ID, or Phone...',
                   prefixIcon: const Icon(Icons.search, color: AppColors.primaryDarkGreen),
                   suffixIcon: searchQuery.isNotEmpty
                       ? IconButton(
