@@ -234,10 +234,12 @@ class _AddEditContributorViewState extends State<AddEditContributorView> {
                     // hint: 'e.g. Unnikrishnan Nair',
                     prefixIcon: Icons.person,
                     validator: (val) {
-                      if (val == null || val.trim().isEmpty)
+                      if (val == null || val.trim().isEmpty) {
                         return 'Please enter contributor name';
-                      if (val.trim().length < 2)
+                      }
+                      if (val.trim().length < 2) {
                         return 'Name must be at least 2 characters';
+                      }
                       return null;
                     },
                   ),
@@ -250,8 +252,9 @@ class _AddEditContributorViewState extends State<AddEditContributorView> {
                     // hint: 'e.g. House #12, MG Road, Kochi',
                     prefixIcon: Icons.home,
                     validator: (val) {
-                      if (val == null || val.trim().isEmpty)
+                      if (val == null || val.trim().isEmpty) {
                         return 'Please enter address';
+                      }
                       return null;
                     },
                   ),
@@ -300,11 +303,13 @@ class _AddEditContributorViewState extends State<AddEditContributorView> {
                     ),
                     prefixIcon: Icons.currency_rupee,
                     validator: (val) {
-                      if (val == null || val.trim().isEmpty)
+                      if (val == null || val.trim().isEmpty) {
                         return 'Enter target amount due';
+                      }
                       final amount = double.tryParse(val.trim());
-                      if (amount == null || amount <= 0)
+                      if (amount == null || amount <= 0) {
                         return 'Enter a valid amount > 0';
+                      }
                       return null;
                     },
                     onChanged: (val) {
@@ -387,11 +392,13 @@ class _AddEditContributorViewState extends State<AddEditContributorView> {
                               prefixIcon: Icons.attach_money,
                               validator: (val) {
                                 if (_recordInitialPayment) {
-                                  if (val == null || val.trim().isEmpty)
+                                  if (val == null || val.trim().isEmpty) {
                                     return 'Enter payment amount';
+                                  }
                                   final amt = double.tryParse(val.trim());
-                                  if (amt == null || amt <= 0)
+                                  if (amt == null || amt <= 0) {
                                     return 'Enter a valid amount > 0';
+                                  }
                                 }
                                 return null;
                               },
@@ -438,8 +445,9 @@ class _AddEditContributorViewState extends State<AddEditContributorView> {
                                 ),
                               ],
                               onChanged: (val) {
-                                if (val != null)
+                                if (val != null) {
                                   setState(() => _initialPaymentMethod = val);
+                                }
                               },
                             ),
                             const SizedBox(height: 12),
