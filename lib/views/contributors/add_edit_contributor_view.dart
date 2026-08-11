@@ -42,11 +42,11 @@ class _AddEditContributorViewState extends State<AddEditContributorView> {
     _addressController = TextEditingController(text: c?.address ?? '');
     _phoneController = TextEditingController(text: c?.phone ?? '');
     _amountDueController = TextEditingController(
-      text: c != null ? c.amountDue.toStringAsFixed(0) : '5000',
+      text: c != null ? c.amountDue.toStringAsFixed(0) : '',
     );
     _notesController = TextEditingController(text: c?.notes ?? '');
 
-    _initialPaymentAmountController = TextEditingController(text: '5000');
+    _initialPaymentAmountController = TextEditingController();
     _initialPaymentNotesController = TextEditingController();
   }
 

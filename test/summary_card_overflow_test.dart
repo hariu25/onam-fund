@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:onam/providers/auth_provider.dart';
 import 'package:onam/providers/contributor_provider.dart';
 import 'package:onam/views/dashboard/dashboard_view.dart';
@@ -10,10 +9,6 @@ import 'package:onam/theme/app_colors.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-
-  setUp(() {
-    SharedPreferences.setMockInitialValues({});
-  });
 
   group('Financial Summary Overview Card & Mobile Responsive Tests', () {
     testWidgets('SummaryCard renders cleanly without overflow in constrained box', (WidgetTester tester) async {

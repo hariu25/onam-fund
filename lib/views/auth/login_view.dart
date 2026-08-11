@@ -14,9 +14,9 @@ class LoginView extends StatefulWidget {
 
 class _LoginViewState extends State<LoginView> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController(text: 'admin@onam.org');
-  final _passwordController = TextEditingController(text: 'admin123');
-  final _confirmPasswordController = TextEditingController(text: 'admin123');
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
   bool _isSignUpMode = false;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
@@ -45,12 +45,6 @@ class _LoginViewState extends State<LoginView> {
       success = await auth.signUp(email, password);
     } else {
       success = await auth.login(email, password);
-      // If demo login fails because account not found, attempt auto sign-up for seamless onboarding
-      if (!success &&
-          auth.errorMessage?.contains('No account found') == true &&
-          email == 'admin@onam.org') {
-        success = await auth.signUp(email, password);
-      }
     }
 
     if (!mounted) return;
@@ -377,46 +371,6 @@ class _LoginViewState extends State<LoginView> {
                               style: const TextStyle(
                                 color: AppColors.primaryDarkGreen,
                                 fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-
-                          // Demo Credential Helper Chip
-                          GestureDetector(
-                            onTap: () {
-                              auth.clearError();
-                              setState(() {
-                                _isSignUpMode = false;
-                                _emailController.text = 'admin@onam.org';
-                                _passwordController.text = 'admin123';
-                                _confirmPasswordController.text = 'admin123';
-                              });
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                              decoration: BoxDecoration(
-                                color: AppColors.warmGoldBg,
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: AppColors.cardBorder),
-                              ),
-                              child: const Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(Icons.lightbulb_outline, size: 14, color: AppColors.darkGold),
-                                  SizedBox(width: 6),
-                                  Flexible(
-                                    child: Text(
-                                      'Demo Login: admin@onam.org / admin123',
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w600,
-                                        color: AppColors.primaryDarkGreen,
-                                      ),
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ],
                               ),
                             ),
                           ),

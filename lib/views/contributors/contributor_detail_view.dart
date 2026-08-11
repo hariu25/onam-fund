@@ -343,7 +343,7 @@ class ContributorDetailView extends StatelessWidget {
                             Icon(Icons.history, size: 40, color: AppColors.textMuted),
                             SizedBox(height: 8),
                             Text(
-                              'No payment records found.',
+                              'No payments recorded yet.',
                               style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
                             ),
                             SizedBox(height: 4),

@@ -198,7 +198,7 @@ class ContributorListView extends StatelessWidget {
                         Text(
                           provider.searchQuery.isNotEmpty || provider.statusFilter != 'All'
                               ? 'No members found matching criteria.'
-                              : 'No members added yet.',
+                              : 'No members registered yet.',
                           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textSecondary),
                         ),
                         const SizedBox(height: 4),

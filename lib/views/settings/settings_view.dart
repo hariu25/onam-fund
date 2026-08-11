@@ -76,47 +76,6 @@ class SettingsView extends StatelessWidget {
     );
   }
 
-  void _confirmResetData(BuildContext context, ContributorProvider provider) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Row(
-          children: [
-            Icon(Icons.refresh, color: AppColors.primaryGold, size: 28),
-            SizedBox(width: 8),
-            Text('Reload Sample Data?'),
-          ],
-        ),
-        content: const Text(
-          'This will restore default sample members and payment history.\n\nAny custom members you added will be overwritten.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('CANCEL'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              provider.resetToSampleData();
-              Navigator.of(ctx).pop();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Sample data reloaded successfully.'),
-                  backgroundColor: AppColors.primaryDarkGreen,
-                ),
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryDarkGreen,
-              foregroundColor: AppColors.primaryGold,
-            ),
-            child: const Text('RELOAD SAMPLES'),
-          ),
-        ],
-      ),
-    );
-  }
-
   void _confirmClearData(BuildContext context, ContributorProvider provider) {
     showDialog(
       context: context,
@@ -336,25 +295,6 @@ class SettingsView extends StatelessWidget {
                 Card(
                   child: Column(
                     children: [
-                      ListTile(
-                        leading: const CircleAvatar(
-                          backgroundColor: AppColors.warmGoldBg,
-                          child: Icon(
-                            Icons.restart_alt,
-                            color: AppColors.primaryDarkGreen,
-                          ),
-                        ),
-                        title: const Text(
-                          'Reload Sample  Data',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        subtitle: const Text(
-                          'Reset Cloud Firestore storage with pre-filled test members.',
-                        ),
-                        trailing: const Icon(Icons.chevron_right),
-                        onTap: () => _confirmResetData(context, provider),
-                      ),
-                      const Divider(height: 1, color: AppColors.cardBorder),
                       ListTile(
                         leading: CircleAvatar(
                           backgroundColor: Colors.red.shade50,

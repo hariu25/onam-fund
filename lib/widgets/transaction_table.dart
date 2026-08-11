@@ -36,7 +36,7 @@ class TransactionTable extends StatelessWidget {
               Icon(Icons.receipt_long_outlined, size: 40, color: AppColors.textMuted),
               SizedBox(height: 8),
               Text(
-                'No payment activity recorded yet.',
+                'No recent payment activity.',
                 style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
               ),
             ],

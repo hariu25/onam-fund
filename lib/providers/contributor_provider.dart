@@ -69,14 +69,16 @@ class ContributorProvider extends ChangeNotifier {
 
   /// Testing helper method to set contributors directly without Firebase
   void setMockContributors(List<Contributor> list) {
-    _contributors = list;
+    _contributorsSubscription?.cancel();
+    _contributors = List.from(list);
     _invalidateCaches();
     notifyListeners();
   }
 
   /// Testing helper method to set payments directly without Firebase
   void setMockPayments(List<Payment> list) {
-    _payments = list;
+    _paymentsSubscription?.cancel();
+    _payments = List.from(list);
     _reindexPayments();
     _invalidateCaches();
     notifyListeners();
@@ -115,7 +117,6 @@ class ContributorProvider extends ChangeNotifier {
 
     try {
       if (!_hasInitializedDataStream) {
-        await StorageService.checkAndSeedInitialData();
         _hasInitializedDataStream = true;
       }
 
@@ -395,21 +396,23 @@ class ContributorProvider extends ChangeNotifier {
     }
 
     // Save contribution entry to 'fund_entries' collection in Cloud Firestore
-    await FirebaseFirestore.instance.collection('fund_entries').add({
-      'contributorId': contributor.id,
-      'contributorName': contributor.name,
-      'name': contributor.name,
-      'address': contributor.address,
-      'phone': contributor.phone,
-      'amount': contributor.amountDue,
-      'amountDue': contributor.amountDue,
-      'date': contributor.createdAt.toIso8601String(),
-      'notes': contributor.notes,
-      'initialPaymentAmount': initialPaymentAmount,
-      'initialPaymentMethod': initialPaymentMethod,
-      'initialPaymentNotes': initialPaymentNotes,
-      'createdAt': FieldValue.serverTimestamp(),
-    });
+    try {
+      await FirebaseFirestore.instance.collection('fund_entries').add({
+        'contributorId': contributor.id,
+        'contributorName': contributor.name,
+        'name': contributor.name,
+        'address': contributor.address,
+        'phone': contributor.phone,
+        'amount': contributor.amountDue,
+        'amountDue': contributor.amountDue,
+        'date': contributor.createdAt.toIso8601String(),
+        'notes': contributor.notes,
+        'initialPaymentAmount': initialPaymentAmount,
+        'initialPaymentMethod': initialPaymentMethod,
+        'initialPaymentNotes': initialPaymentNotes,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+    } catch (_) {}
   }
 
   // Edit Contributor details & amount due
@@ -417,19 +420,21 @@ class ContributorProvider extends ChangeNotifier {
     await StorageService.saveContributor(updatedContributor);
 
     // Save update record to 'fund_entries' collection in Cloud Firestore
-    await FirebaseFirestore.instance.collection('fund_entries').add({
-      'contributorId': updatedContributor.id,
-      'contributorName': updatedContributor.name,
-      'name': updatedContributor.name,
-      'address': updatedContributor.address,
-      'phone': updatedContributor.phone,
-      'amount': updatedContributor.amountDue,
-      'amountDue': updatedContributor.amountDue,
-      'date': DateTime.now().toIso8601String(),
-      'notes': updatedContributor.notes,
-      'isUpdate': true,
-      'createdAt': FieldValue.serverTimestamp(),
-    });
+    try {
+      await FirebaseFirestore.instance.collection('fund_entries').add({
+        'contributorId': updatedContributor.id,
+        'contributorName': updatedContributor.name,
+        'name': updatedContributor.name,
+        'address': updatedContributor.address,
+        'phone': updatedContributor.phone,
+        'amount': updatedContributor.amountDue,
+        'amountDue': updatedContributor.amountDue,
+        'date': DateTime.now().toIso8601String(),
+        'notes': updatedContributor.notes,
+        'isUpdate': true,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+    } catch (_) {}
   }
 
   // Delete Contributor and associated payments
@@ -504,21 +509,6 @@ class ContributorProvider extends ChangeNotifier {
     resetPagination();
     _filteredListDirty = true;
     notifyListeners();
-  }
-
-  // Reset to Sample Data in Firestore
-  Future<void> resetToSampleData() async {
-    _isLoading = true;
-    _errorMessage = null;
-    notifyListeners();
-
-    try {
-      await StorageService.resetToSampleData();
-    } catch (e) {
-      _isLoading = false;
-      _errorMessage = 'Failed to reset sample data: $e';
-      notifyListeners();
-    }
   }
 
   // Clear All Data in Firestore
